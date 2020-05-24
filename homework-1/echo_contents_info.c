@@ -11,13 +11,13 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#define BUF_LEN 256                      /* バッファのサイズ */
+#define BUF_LEN 1024                    /* バッファのサイズ */
 
 int main(int argc, char *argv[]){
-    int s;                               /* ソケットのためのファイルディスクリプタ */
-    struct hostent *servhost;            /* ホスト名と IP アドレスを扱うための構造体 */
-    struct sockaddr_in server;           /* ソケットを扱うための構造体 */
-    struct servent *service;             /* サービス (http など) を扱うための構造体 */
+    int s;
+    struct hostent *servhost;
+    struct sockaddr_in server;
+    struct servent *service;
 
     char send_buf[BUF_LEN];              /* サーバに送る HTTP プロトコル用バッファ */
     char host[BUF_LEN] = "localhost";    /* 接続するホスト名 */
@@ -26,11 +26,6 @@ int main(int argc, char *argv[]){
 
     if ( argc > 1 ){                     /* URLが指定されていたら */
         char host_path[BUF_LEN];
-
-        if ( strlen(argv[1]) > BUF_LEN-1 ){
-            fprintf(stderr, "URL が長すぎます。\n");
-            return 1;
-        }
 
         if ( strstr(argv[1], "http://") &&
              sscanf(argv[1], "http://%s", host_path) &&
@@ -75,7 +70,7 @@ int main(int argc, char *argv[]){
 
     /* IPアドレスを示す構造体をコピー */
     bcopy(servhost->h_addr, &server.sin_addr, servhost->h_length);
-    
+
     /* ソケット生成 */
     if ( ( s = socket(AF_INET, SOCK_STREAM, 0) ) < 0 ){
         fprintf(stderr, "ソケットの生成に失敗しました。\n");

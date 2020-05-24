@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define PROXYPORT 8080  /* プロキシサーバのポート番号 */
+#define PROXYPORT 80  /* プロキシサーバのポート番号 */
 #define BUFSIZE 1024    /* バッファサイズ */
 
 int main()
@@ -21,12 +21,12 @@ int main()
 
     int tcpsock;
 
-    char proxyname[] = "proxy.cis.kit.ac.jp"; /* プロキシサーバ */
+    char proxyname[] = "www.sec.is.kit.ac.jp"; /* プロキシサーバ */
     char k_buf[BUFSIZE], s_buf[BUFSIZE], r_buf[BUFSIZE];
     int strsize;
 
     /* サーバ名をアドレス(hostent構造体)に変換する */
-    if((server_host = gethostbyname(proxyname)) == NULL){
+    if((server_host = gethostbyname( proxyname )) == NULL){
         fprintf(stderr,"gethostbyname()");
         exit(EXIT_FAILURE);
     }
@@ -50,13 +50,13 @@ int main()
     }
 
     /* キーボードから文字列を入力してサーバに送信 */
-    while(  != '\n' ){ /* 空行が入力されるまで繰り返し */
+    while( *(fgets(k_buf, BUFSIZE, stdin)) != '\n' ){ /* 空行が入力されるまで繰り返し */
         strsize = strlen(k_buf);
         k_buf[strsize-1] = 0;   /* 末尾の改行コードを消す */
         snprintf(s_buf, BUFSIZE, "%s\r\n",k_buf); /* HTTPの改行コードは \r\n */
 
         /* 文字列をサーバに送信する */
-        if( send(tcpsock, s_buf, strsize, 0) == -1 ){
+        if( send(tcpsock, k_buf, strsize, 0) == -1 ){
             fprintf(stderr,"send()");
             exit(EXIT_FAILURE);
         }

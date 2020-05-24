@@ -19,14 +19,14 @@ int main(int argc, char **argv)
     int sock;
     char proxy_host_name;
     int port;
-    char url;
+    char hostname;
 
     switch(argc){
         case 4:
             proxy_host_name = argv[2];
             port = atoi(argv[3]);
         case 2:
-            url = argv[1];
+            hostname = argv[1];
             // ここはurlからホスト名だけを抜き出さないと、gethostbynameできない？
             port = 80
             break;
@@ -34,8 +34,7 @@ int main(int argc, char **argv)
             printf("正しく起動時の引数を設定してください\n");
     }
 
-//    char servername[] = "localhost";  /* ←実験するとき書き換える */
-/* char servername[] = "192.168.1.10"; */
+
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
     int strsize;
 
@@ -48,7 +47,7 @@ int main(int argc, char **argv)
     /* サーバの情報をsockaddr_in構造体に格納する */
     memset(&server_adrs, 0, sizeof(server_adrs));
     server_adrs.sin_family = AF_INET;
-    server_adrs.sin_port = htons(PORT);
+    server_adrs.sin_port = htons(port);
     memcpy(&server_adrs.sin_addr, server_host->h_addr_list[0], server_host->h_length);
 
     /* ソケットをSTREAMモードで作成する */
@@ -60,14 +59,6 @@ int main(int argc, char **argv)
     /* ソケットにサーバの情報を対応づけてサーバに接続する */
     if(connect(sock, (struct sockaddr *)&server_adrs, sizeof(server_adrs))== -1){
         fprintf(stderr,"connect");
-        exit(EXIT_FAILURE);
-    }
-
-
-
-    /* 文字列をサーバに送信する */
-    if( send(sock, s_buf, strsize, 0) == -1 ){
-        fprintf(stderr,"send()");
         exit(EXIT_FAILURE);
     }
 

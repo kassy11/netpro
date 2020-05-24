@@ -1,77 +1,115 @@
+/* $Id: http-client.c,v 1.6 2013/01/23 06:57:19 68user Exp $ */
+
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <sys/param.h>
+#include <sys/uio.h>
 #include <unistd.h>
-#include <stdlib.h>
 
-#define S_BUFSIZE 100   /* 送信用バッファサイズ */
-#define R_BUFSIZE 100   /* 受信用バッファサイズ */
+#define BUF_LEN 256                      /* バッファのサイズ */
 
-int main(int argc, char **argv)
-{
-    struct hostent *server_host;
-    struct sockaddr_in server_adrs;
+int main(int argc, char *argv[]){
+    int s;                               /* ソケットのためのファイルディスクリプタ */
+    struct hostent *servhost;            /* ホスト名と IP アドレスを扱うための構造体 */
+    struct sockaddr_in server;           /* ソケットを扱うための構造体 */
+    struct servent *service;             /* サービス (http など) を扱うための構造体 */
 
-    int sock;
-    char proxy_host_name;
-    int port;
-    char hostname;
+    char send_buf[BUF_LEN];              /* サーバに送る HTTP プロトコル用バッファ */
+    char host[BUF_LEN] = "localhost";    /* 接続するホスト名 */
+    char path[BUF_LEN] = "/";            /* 要求するパス */
+    unsigned short port = 80;            /* 接続するポート番号 */
 
-    switch(argc){
-        case 4:
-            proxy_host_name = argv[2];
-            port = atoi(argv[3]);
-        case 2:
-            hostname = argv[1];
-            // ここはurlからホスト名だけを抜き出さないと、gethostbynameできない？
-            port = 80
+    if ( argc > 1 ){                     /* URLが指定されていたら */
+        char host_path[BUF_LEN];
+
+        if ( strlen(argv[1]) > BUF_LEN-1 ){
+            fprintf(stderr, "URL が長すぎます。\n");
+            return 1;
+        }
+
+        if ( strstr(argv[1], "http://") &&
+             sscanf(argv[1], "http://%s", host_path) &&
+             strcmp(argv[1], "http://" ) ){
+            char *p;
+
+            p = strchr(host_path, '/');  /* ホストとパスの区切り "/" を調べる */
+            if ( p != NULL ){
+                strcpy(path, p);        /* "/"以降の文字列を path にコピー */
+                *p = '\0';
+                strcpy(host, host_path); /* "/"より前の文字列を host にコピー */
+            } else {                     /* "/"がないなら＝http://host という引数なら */
+                strcpy(host, host_path); /* 文字列全体を host にコピー */
+            }
+
+            p = strchr(host, ':');       /* ホスト名の部分に ":" が含まれていたら */
+            if ( p != NULL ){
+                port = atoi(p+1);        /* ポート番号を取得 */
+                if ( port <= 0 ){        /* 数字でない (atoi が失敗) か、0 だったら */
+                    port = 80;           /* ポート番号は 80 に決め打ち */
+                }
+                *p = '\0';
+            }
+        } else {
+            fprintf(stderr, "URL は http://host/path の形式で指定してください。\n");
+            return 1;
+        }
+    }
+
+    printf("http://%s%s を取得します。\n\n", host, path);
+
+    /* ホストの情報(IPアドレスなど)を取得 */
+
+    if ( (servhost = gethostbyname(host)) == NULL ){
+        fprintf(stderr, "[%s] から IP アドレスへの変換に失敗しました。\n", host);
+        return 0;
+    }
+
+
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
+
+    /* IPアドレスを示す構造体をコピー */
+    bcopy(servhost->h_addr, &server.sin_addr, servhost->h_length);
+    
+    /* ソケット生成 */
+    if ( ( s = socket(AF_INET, SOCK_STREAM, 0) ) < 0 ){
+        fprintf(stderr, "ソケットの生成に失敗しました。\n");
+        return 1;
+    }
+    /* サーバに接続 */
+    if ( connect(s, (struct sockaddr *)&server, sizeof(server)) == -1 ){
+        fprintf(stderr, "connect に失敗しました。\n");
+        return 1;
+    }
+
+    /* HTTP プロトコル生成 & サーバに送信 */
+    sprintf(send_buf, "GET %s HTTP/1.0\r\n", path);
+    write(s, send_buf, strlen(send_buf));
+
+    sprintf(send_buf, "Host: %s:%d\r\n", host, port);
+    write(s, send_buf, strlen(send_buf));
+
+    sprintf(send_buf, "\r\n");
+    write(s, send_buf, strlen(send_buf));
+
+    /* あとは受信して、表示するだけ */
+    while (1){
+        char buf[BUF_LEN];
+        int read_size;
+        read_size = read(s, buf, BUF_LEN);
+        if ( read_size > 0 ){
+            write(1, buf, read_size);
+        } else {
             break;
-        default:
-            printf("正しく起動時の引数を設定してください\n");
+        }
     }
+    /* 後始末 */
+    close(s);
 
-
-    char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
-    int strsize;
-
-    /* サーバ名をアドレス(hostent構造体)に変換する */
-    if((server_host = gethostbyname( hostname )) == NULL){
-        fprintf(stderr,"gethostbyname()");
-        exit(EXIT_FAILURE);
-    }
-
-    /* サーバの情報をsockaddr_in構造体に格納する */
-    memset(&server_adrs, 0, sizeof(server_adrs));
-    server_adrs.sin_family = AF_INET;
-    server_adrs.sin_port = htons(port);
-    memcpy(&server_adrs.sin_addr, server_host->h_addr_list[0], server_host->h_length);
-
-    /* ソケットをSTREAMモードで作成する */
-    if((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1){
-        fprintf(stderr,"socket()");
-        exit(EXIT_FAILURE);
-    }
-
-    /* ソケットにサーバの情報を対応づけてサーバに接続する */
-    if(connect(sock, (struct sockaddr *)&server_adrs, sizeof(server_adrs))== -1){
-        fprintf(stderr,"connect");
-        exit(EXIT_FAILURE);
-    }
-
-    /* サーバから文字列を受信する */
-    if((strsize=recv(sock, r_buf, R_BUFSIZE-1, 0)) == -1){
-        fprintf(stderr,"recv()");
-        exit(EXIT_FAILURE);
-    }
-    r_buf[strsize] = '\0';
-
-    printf("%s",r_buf);      /* 受信した文字列を画面に書く */
-
-    close(sock);             /* ソケットを閉じる */
-
-    exit(EXIT_SUCCESS);
+    return 0;
 }

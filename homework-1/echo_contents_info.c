@@ -19,12 +19,12 @@ int main(int argc, char *argv[]){
     struct sockaddr_in server;
     struct servent *service;
 
-    char send_buf[BUF_LEN];              /* サーバに送る HTTP プロトコル用バッファ */
-    char host[BUF_LEN] = "localhost";    /* 接続するホスト名 */
-    char path[BUF_LEN] = "/";            /* 要求するパス */
-    unsigned short port = 80;            /* 接続するポート番号 */
+    char send_buf[BUF_LEN];
+    char host[BUF_LEN] = "localhost";
+    char path[BUF_LEN] = "/";
+    unsigned short port;
 
-    if ( argc > 1 ){                     /* URLが指定されていたら */
+    if ( argc == 2){
         char host_path[BUF_LEN];
 
         if ( strstr(argv[1], "http://") &&
@@ -32,51 +32,48 @@ int main(int argc, char *argv[]){
              strcmp(argv[1], "http://" ) ){
             char *p;
 
-            p = strchr(host_path, '/');  /* ホストとパスの区切り "/" を調べる */
+            p = strchr(host_path, '/');
             if ( p != NULL ){
-                strcpy(path, p);        /* "/"以降の文字列を path にコピー */
+                strcpy(path, p);
                 *p = '\0';
-                strcpy(host, host_path); /* "/"より前の文字列を host にコピー */
-            } else {                     /* "/"がないなら＝http://host という引数なら */
-                strcpy(host, host_path); /* 文字列全体を host にコピー */
+                strcpy(host, host_path);
+            } else {
+                strcpy(host, host_path);
             }
 
-            p = strchr(host, ':');       /* ホスト名の部分に ":" が含まれていたら */
+            p = strchr(host, ':');
             if ( p != NULL ){
-                port = atoi(p+1);        /* ポート番号を取得 */
-                if ( port <= 0 ){        /* 数字でない (atoi が失敗) か、0 だったら */
-                    port = 80;           /* ポート番号は 80 に決め打ち */
+                port = atoi(p+1);
+                if ( port <= 0 ){
+                    port = 80;
                 }
                 *p = '\0';
             }
-        } else {
+            port = 80;
+        }else{
             fprintf(stderr, "URL は http://host/path の形式で指定してください。\n");
             return 1;
         }
+    }else if(argc == 4){
+        strcpy(host, argv[2]);
+        port = atoi(argv[3]);
     }
 
     printf("http://%s%s を取得します。\n\n", host, path);
-
-    /* ホストの情報(IPアドレスなど)を取得 */
 
     if ( (servhost = gethostbyname(host)) == NULL ){
         fprintf(stderr, "[%s] から IP アドレスへの変換に失敗しました。\n", host);
         return 0;
     }
 
-
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
+    memcpy(&server.sin_addr, servhost->h_addr_list[0], servhost->h_length);
 
-    /* IPアドレスを示す構造体をコピー */
-    bcopy(servhost->h_addr, &server.sin_addr, servhost->h_length);
-
-    /* ソケット生成 */
     if ( ( s = socket(AF_INET, SOCK_STREAM, 0) ) < 0 ){
         fprintf(stderr, "ソケットの生成に失敗しました。\n");
         return 1;
     }
-    /* サーバに接続 */
     if ( connect(s, (struct sockaddr *)&server, sizeof(server)) == -1 ){
         fprintf(stderr, "connect に失敗しました。\n");
         return 1;
@@ -92,18 +89,15 @@ int main(int argc, char *argv[]){
     sprintf(send_buf, "\r\n");
     write(s, send_buf, strlen(send_buf));
 
-    /* あとは受信して、表示するだけ */
-    while (1){
-        char buf[BUF_LEN];
-        int read_size;
-        read_size = read(s, buf, BUF_LEN);
-        if ( read_size > 0 ){
-            write(1, buf, read_size);
-        } else {
-            break;
-        }
-    }
-    /* 後始末 */
+
+    char buf[100000];
+    char *type;
+    char *server_name;
+    recv(s, buf, BUF_LEN, 0);
+    sscanf(buf, "Content-Type: %s\r\n", type);
+    sscanf(buf, "Server: %s\r\n", server_name);
+    printf("Content-Type: %s\nServer: %s\n", type, server_name);
+
     close(s);
 
     return 0;

@@ -90,14 +90,16 @@ int main(int argc, char *argv[]){
     write(s, send_buf, strlen(send_buf));
 
 
-    char buf[100000];
-    char *type;
-    char *server_name;
-    recv(s, buf, BUF_LEN, 0);
-    sscanf(buf, "Content-Type: %s\r\n", type);
-    sscanf(buf, "Server: %s\r\n", server_name);
-    printf("Content-Type: %s\nServer: %s\n", type, server_name);
-
+    while (1){
+        char buf[BUF_LEN];
+        int read_size;
+        read_size = read(s, buf, BUF_LEN);
+        if ( read_size > 0 ){
+            write(1, buf, read_size);
+        } else {
+            break;
+        }
+    }
     close(s);
 
     return 0;

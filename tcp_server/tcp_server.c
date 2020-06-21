@@ -23,6 +23,8 @@ int main()
     memset(&my_adrs, 0, sizeof(my_adrs));
     my_adrs.sin_family = AF_INET;
     my_adrs.sin_port = htons(PORT);
+
+    // サーバ自身のアドレスは明示的に指定しなくてもわかりますので INADDR_ANYという特別な値を設定
     my_adrs.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /* 待ち受け用ソケットをSTREAMモードで作成する */
@@ -32,6 +34,7 @@ int main()
     }
 
     /* 待ち受け用のソケットに自分自身のアドレス情報を結びつける */
+    // bind()システムコールは、ソケットに実際のアドレス情報を結び付ける働きをする
     if(bind(sock_listen, (struct sockaddr*)&my_adrs, sizeof(my_adrs))== -1 ){
         fprintf(stderr,"bind()");
         exit(EXIT_FAILURE);
@@ -41,6 +44,8 @@ int main()
     listen(sock_listen,5);
 
     /* クライアントの接続を受け付ける */
+    // クライアントのアドレス情報は必要ないのでNULLを設定する
+    //accept()の返す値は、接続を受け付けたクライアントとの通信に用いる新しい ソケットディスクリプタ（待受と実際に使うソケットは別々）
     sock_accepted = accept(sock_listen, NULL, NULL);
     close(sock_listen);
 

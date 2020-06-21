@@ -1,3 +1,6 @@
+// localhostでのTCPクライアントプログラム
+// localでtcp_serverプログラムが動作していれば動く
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -19,7 +22,7 @@ int main()
     int sock;
 
     char servername[] = "localhost";  /* ←実験するとき書き換える */
-/* char servername[] = "192.168.1.10"; */
+/* char servername[] = "192.168.1.10";（変換後） */
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
     int strsize;
 
@@ -31,9 +34,12 @@ int main()
 
     /* サーバの情報をsockaddr_in構造体に格納する */
     memset(&server_adrs, 0, sizeof(server_adrs));
+    //  memset()関数は、指定したメモリ領域をある値で埋める関数で、 ここでは、構造体変数server_adrsを0に初期化するために使っています
     server_adrs.sin_family = AF_INET;
     server_adrs.sin_port = htons(PORT);
     memcpy(&server_adrs.sin_addr, server_host->h_addr_list[0], server_host->h_length);
+    // メモリ領域をコピーする、ここではgethostbynameで得たIPアドレスをsin_addrメンバにコピーしている
+    // memcpy(コピー先の先頭アドレス、コピー元の先頭アドレス、コピー するサイズ)
 
     /* ソケットをSTREAMモードで作成する */
     if((sock = socket(PF_INET, SOCK_STREAM, 0)) == -1){
@@ -42,6 +48,8 @@ int main()
     }
 
     /* ソケットにサーバの情報を対応づけてサーバに接続する */
+    // connect()関数は、TCP/IPプロトコル以 外でも使用するので、
+    // 一般的に使えるように sockaddr構造体へのポインタを 指定することになっている（キャストしている）
     if(connect(sock, (struct sockaddr *)&server_adrs, sizeof(server_adrs))== -1){
         fprintf(stderr,"connect");
         exit(EXIT_FAILURE);

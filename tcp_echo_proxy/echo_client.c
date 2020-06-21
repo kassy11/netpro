@@ -1,7 +1,5 @@
-/*
-   Proxyを介してHTTPサーバと対話するクライアントプログラム
-　　（利用者が自らHTTPを入力する必要がある）
-*/
+//   Proxyを介してHTTPサーバと対話するクライアントプログラム(利用者が自らHTTPを入力する必要がある）
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>

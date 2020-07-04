@@ -17,41 +17,52 @@ void type(char*, char*);
 
 int main(int argc, char *argv[]) {
     int port = atoi(argv[2]);
-    char severname = *argv[1];
     int sock_listen, sock_accepted;
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
     char prompt[2] = ">";
     int prompt_size = 2;
     int strsize;
 
-    // mynetを利用してサーバに接続する
+    // mynetを利用してサーバに接続
     sock_listen = init_tcpserver(port, 5);
 
     while(1){
         sock_accepted = accept(sock_listen, NULL, NULL);
-        // 文字入力
-        do{
-            if((strsize=recv(sock_accepted, r_buf, R_BUFSIZE, 0)) == -1){
-                exit_errmesg("recv()");
-            }
-            r_buf[strsize] = '\0';
-        }while(r_buf[strsize-1] != '\n');
-        // 入力を継続する
-        fflush(stdout);
 
-        if(strstr(r_buf, "exit") != NULL){
-            break;
-        }else if(strstr(r_buf, "list") != NULL){
-            list(s_buf);
-        }else if(strstr(r_buf, "type") != NULL){
-            type(r_buf, s_buf);
-        }else{
-            exit_errmesg("unknown command!!");
+        while(1){ // exitで抜けたときにもう一度受付状態に戻れるように２重ループにする
+            fprintf(stderr,">");
+            fflush(stderr);
+            // 文字入力
+            do{
+                if((strsize=recv(sock_accepted, r_buf, R_BUFSIZE, 0)) == -1){
+                    exit_errmesg("recv()");
+                }
+//                if (send(sock_accepted, s_buf, strsize, 0) == -1)
+//                {
+//                    exit_errmesg("send()");
+//                }
+            }while(r_buf[strsize-1] != '\n');
+            r_buf[strsize] = '\0';
+
+            fflush(stdout);
+
+            if(strstr(r_buf, "exit") != NULL){
+                printf("Connection closed by foreign host.\n");
+                break;
+            }else if(strstr(r_buf, "list") != NULL){
+                list(s_buf);
+            }else if(strstr(r_buf, "type") != NULL){
+                type(r_buf, s_buf);
+            }else{
+                exit_errmesg("unknown command!!");
+            }
         }
+        // 次の受け入れのために受け入れソケット閉じる
+        close(sock_accepted);
     }
 
     close(sock_listen);
-
+    exit(EXIT_SUCCESS);
     return 0;
 }
 

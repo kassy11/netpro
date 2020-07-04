@@ -3,6 +3,6 @@ project(echofork C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(echofork main.c echofork.c)
+add_executable(echofork echofork.c)
 
 include_directories(../mynet)

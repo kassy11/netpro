@@ -16,6 +16,8 @@ int main()
 
     /* キーボードから文字列を入力する */
     ;
+
+    fgets(s_buf, S_BUFSIZE, stdin);
     strsize = strlen(s_buf);
 
     /* 文字列をサーバに送信する */

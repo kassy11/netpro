@@ -12,7 +12,7 @@ int main()
     int strsize;
 
     /* サーバに接続する */
-    sock = init_tcpclient("localhost", 5000) ; /* ←ライブラリの関数を使った */
+    sock = init_tcpclient("localhost", 50000 ) ; /* ←ライブラリの関数を使った */
 
     /* キーボードから文字列を入力する */
     ;

@@ -1,3 +1,5 @@
+// サーバ名とポート番号を引数にとって、接続に成功したソケットを返す
+
 #include "mynet.h"
 
 int init_tcpclient(char *servername, in_port_t serverport)

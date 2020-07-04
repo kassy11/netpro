@@ -1,3 +1,5 @@
+// 引数として、ポート番号と待ち受けをする数（listen()の第２引数） を取り、待ち受け用に開いたソケットを返す
+
 #include "mynet.h"
 
 int init_tcpserver(in_port_t myport, int backlog)

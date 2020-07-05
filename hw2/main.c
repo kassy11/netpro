@@ -11,13 +11,16 @@ int main(int argc, char* argv[])
     int sock_listen, sock_accepted;
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
     char prompt[] = ">";
-    int prompt_size = 2;
+    int prompt_size = strlen(prompt);
+    char password_check[] = "[password]";
+    int check_size = strlen(password_check);
     int strsize;
 
     if( argc != 2 ){
         fprintf(stderr,"Usage: %s Port_number\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+    // ポートはコマンドライン引数から
     int port_num = atoi(argv[1]);
 
     sock_listen = init_tcpserver(port_num, 5);
@@ -26,8 +29,27 @@ int main(int argc, char* argv[])
     {
         sock_accepted = accept(sock_listen, NULL, NULL);
 
+        /* 文字列をサーバに送信する */
+        if( send(sock_accepted, password_check, check_size, 0) == -1 ){
+            fprintf(stderr,"send()");
+            exit(EXIT_FAILURE);
+        }
+
+        /* サーバから文字列を受信する */
+        if((strsize=recv(sock_accepted, r_buf, R_BUFSIZE-1, 0)) == -1){
+            fprintf(stderr,"recv()");
+            exit(EXIT_FAILURE);
+        }
+        r_buf[strsize] = '\0';
+
+        if(!strcmp(r_buf, "netpro")){
+            exit_errmesg("your passowrd is not correct!");
+        }
+        strcpy(r_buf, "");
+
         while (1) // コマンド入力後、新たなクライアントからの接続待ちにうつれるように２重ループ
         {
+
             // プロンプトの>をクライアントに送信する
             if (send(sock_accepted, prompt, prompt_size, 0) == -1)
             {
@@ -99,10 +121,11 @@ void type(char *r_buf, char *s_buf)
     char cmd[R_BUFSIZE];
     strtok(r_buf, " "); // r_bufをスペースで区切る
     tp = strtok(NULL, "\r");
-    if (tp == NULL)
+    if (tp == NULL){
         strcpy(s_buf, "error!\n");
+    }
 
-    sprintf(cmd, "cat ./%s", tp);
+    sprintf(cmd, "cat %s", tp);
     FILE *fp = popen(cmd, "r");
     while (fgets(buff, sizeof(buff), fp))
     {

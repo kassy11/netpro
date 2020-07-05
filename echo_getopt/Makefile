@@ -4,7 +4,7 @@ CFLAGS=-I${MYLIBDIR} -L${MYLIBDIR}
 
 all: echo_getopt
 
-echo_getopt: echo_getopt.o 
+echo_getopt: echo_getopt.o
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:

@@ -4,8 +4,8 @@ CFLAGS=-I${MYLIBDIR} -L${MYLIBDIR}
 
 all: echo_server_thread
 
-echo_server_thread: echo_server_thread.c
+echo_server_thread: echo_server_thread.o
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:
-	${RM} *.o echo_client_thread *~
+	${RM} *.o echo_server_thread *~

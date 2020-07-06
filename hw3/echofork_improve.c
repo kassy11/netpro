@@ -49,25 +49,20 @@ int main(int argc, char *argv[])
     sock_listen = init_tcpserver(port_number, 5);
     child = fork();
 
-    for(int i = 1;i< process_limit;i++){
-        // fork()は親プロセスでは、作成した子プロセスのプロセスIDを返し、子プロセスでは0を返す
-        // fork()を実行した直後に、親プロセスか子プロセスかの判断を行うこと が大事
-        if( child == 0 ){
-
-        }
-        else if(child > 0){
+    for(int i = 1;i <  process_limit; i++) {
+        if (child == 0) {
+            // これがないと、fork(): Invalid argumentとなる
+        }else if (child > 0) {
             // 親プロセスのとき
-            /* parent's process */
             n_process++;
             printf("Client is accepted.[%d]\n", child);
-            // このときchildには子プロセスIDが入っている
-            close(sock_accepted);
-        }
-        else{
+            child = fork();
+        } else {
             /* fork()に失敗 */
             close(sock_listen);
             exit_errmesg("fork()");
         }
+    }
 
         while(1){
             sock_accepted = accept(sock_listen, NULL, NULL);
@@ -95,7 +90,6 @@ int main(int argc, char *argv[])
         while( (child=waitpid(-1, NULL, WNOHANG ))>0 ){
             n_process--;
         }
-    }
 
     /* never reached */
 }

@@ -4,55 +4,60 @@
 #include "mynet.h"
 #include <sys/wait.h>
 
-#define PRCS_LIMIT 10 /* プロセス数制限 */
 #define BUFSIZE 50   /* バッファサイズ */
+#define DEFAULT_PORT 50000
+#define DEFAULT_PROCESS_LIMIT 10
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 int main(int argc, char *argv[])
 {
-    int port_number;
+    int port_number = DEFAULT_PORT;
     int sock_listen, sock_accepted;
     int n_process = 0;
+    int process_limit = DEFAULT_PROCESS_LIMIT;
     pid_t child;
     char buf[BUFSIZE];
     int strsize;
+    int c;
 
-    /* 引数のチェックと使用法の表示 */
-    if( argc != 2 ){
-        fprintf(stderr,"Usage: %s Port_number\n", argv[0]);
-        exit(EXIT_FAILURE);
+    // コマンドラインオプションをの解析
+    opterr = 0;
+    while( 1 ){
+        c = getopt(argc, argv, "l:p:h");
+        if( c == -1 ) break;
+
+        switch( c ){
+            case 'l' :
+                process_limit = atoi(optarg);
+                break;
+            case 'p':
+                port_number = atoi(optarg);
+                break;
+            case '?' :
+                fprintf(stderr,"Unknown option '%c'\n", optopt );
+            case 'h' :
+                printf("l: プロセスのリミット数");
+                printf(("p: ポート番号の指定"));
+                exit(EXIT_FAILURE);
+                break;
+        }
     }
-
-    port_number = atoi(argv[1]);
 
     /* サーバの初期化 */
     sock_listen = init_tcpserver(port_number, 5);
+    child = fork();
 
-    for(;;){
+    for(int i = 1;i< process_limit;i++){
 
         /* クライアントの接続を受け付ける */
         sock_accepted = accept(sock_listen, NULL, NULL);
 
         // fork()は親プロセスでは、作成した子プロセスのプロセスIDを返し、子プロセスでは0を返す
         // fork()を実行した直後に、親プロセスか子プロセスかの判断を行うこと が大事
-        if( (child= fork()) == 0 ){
-            // プロセスが２つに分岐、子プロセスは0を返す
-            /* Child process */
-            close(sock_listen);
-            // 親プロセスが待ち受けに 使っていたソケットを閉じる
-            do{
-                /* 文字列をクライアントから受信する */
-                if((strsize=recv(sock_accepted, buf, BUFSIZE, 0)) == -1){
-                    exit_errmesg("recv()");
-                }
+        if( child == 0 ){
 
-                /* 文字列をクライアントに送信する */
-                if(send(sock_accepted, buf, strsize, 0) == -1 ){
-                    exit_errmesg("send()");
-                }
-            }while( buf[strsize-1] != '\n' ); /* 改行コードを受信するまで繰り返す */
-
-            close(sock_accepted);
-            exit(EXIT_SUCCESS);
         }
         else if(child > 0){
             // 親プロセスのとき
@@ -68,8 +73,25 @@ int main(int argc, char *argv[])
             exit_errmesg("fork()");
         }
 
+        while(1){
+            sock_accepted = accept(sock_listen, NULL, NULL);
+            do
+            {
+                if ((strsize = recv(sock_accepted, buf, BUFSIZE, 0)) == -1)
+                {
+                    exit_errmesg("recv()");
+                }
+                if (send(sock_accepted, buf, strsize, 0) == -1)
+                {
+                    exit_errmesg("send()");
+                }
+            } while (buf[0] != '\r'); /* 改行コードを受信するまで繰り返す */
+            close(sock_accepted);
+        }
+
+
         /* ゾンビプロセスの回収 */
-        if( n_process == PRCS_LIMIT ){
+        if( n_process == process_limit ){
             child= wait(NULL); /* 制限数を超えたら 空きが出るまでブロック */
             n_process--;
         }

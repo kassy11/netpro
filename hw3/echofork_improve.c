@@ -50,10 +50,6 @@ int main(int argc, char *argv[])
     child = fork();
 
     for(int i = 1;i< process_limit;i++){
-
-        /* クライアントの接続を受け付ける */
-        sock_accepted = accept(sock_listen, NULL, NULL);
-
         // fork()は親プロセスでは、作成した子プロセスのプロセスIDを返し、子プロセスでは0を返す
         // fork()を実行した直後に、親プロセスか子プロセスかの判断を行うこと が大事
         if( child == 0 ){

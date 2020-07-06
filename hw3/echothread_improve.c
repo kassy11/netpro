@@ -1,14 +1,13 @@
 // あらかじめ決まった数の子スレッドを生成しておき、それらの子スレッドがそれぞれクライアントからの接続を待つように改良
 // スレッドの数を指定できるようにする
 
-/*
-echo_server3th.c (Thread版)
-*/
+
 #include "mynet.h"
 #include <pthread.h>
 
 #define BUFSIZE 50 /* バッファサイズ */
-#define THREAD_LIMIT 10
+#define THREAD_PRE 10
+#define DEFAULT_PORT 50000
 
 void *echo_thread(void *arg);
 
@@ -18,26 +17,41 @@ extern int optind, opterr, optopt;
 
 int main(int argc, char *argv[])
 {
-    int port_number;
+    int port_number = DEFAULT_PORT;
     int sock_listen;
+    int thread_pre = THREAD_PRE;
     int *tharg;
+    int c;
     pthread_t tid;
 
-/* 引数のチェックと使用法の表示 */
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s Port_number\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
 
-    port_number = atoi(argv[1]); /* 引数の取得 */
+    // コマンドラインオプションをの解析
+    opterr = 0;
+    while( 1 ){
+        c = getopt(argc, argv, "t:p:h");
+        if( c == -1 ) break;
+
+        switch( c ){
+            case 't' :
+                thread_pre = atoi(optarg);
+                break;
+            case 'p':
+                port_number = atoi(optarg);
+                break;
+            case '?' :
+                fprintf(stderr,"Unknown option '%c'\n", optopt );
+            case 'h' :
+                printf("t: スレッドの準備しておく数");
+                printf(("p: ポート番号の指定"));
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
 
 /* サーバの初期化 */
     sock_listen = init_tcpserver(port_number, 5);
 
-    for (int i = 0; i < THREAD_LIMIT; i++)
-    {
-/* スレッド関数の引数を用意する */
+    for (int i = 0; i < thread_pre; i++){
         if ((tharg = (int *)malloc(sizeof(int))) == NULL)
         {
             exit_errmesg("malloc()");
@@ -45,12 +59,12 @@ int main(int argc, char *argv[])
 
         *tharg = sock_listen;
 
-/* スレッドを生成する */
         if (pthread_create(&tid, NULL, echo_thread, (void *)tharg) != 0)
         {
             exit_errmesg("pthread_create()");
         }
     }
+    printf("%d個のスレッドがあらかじめ生成されました\n", thread_pre);
 
     while (1);
 

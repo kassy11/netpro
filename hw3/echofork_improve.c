@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             case '?' :
                 fprintf(stderr,"Unknown option '%c'\n", optopt );
             case 'h' :
-                printf("l: プロセスのリミット数");
+                printf("l: プロセスの準備しておく数");
                 printf(("p: ポート番号の指定"));
                 exit(EXIT_FAILURE);
                 break;
@@ -51,13 +51,12 @@ int main(int argc, char *argv[])
     sock_listen = init_tcpserver(port_number, 5);
     child = fork();
 
-    for(int i = 1;i <  process_pre; i++) {
+    for(int i = 0;i <  process_pre; i++) {
         if (child == 0) {
             // これがないと、fork(): Invalid argumentとなる
         }else if (child > 0) {
             // 親プロセスのとき
             n_process++;
-            printf("Client is accepted.[%d]\n", child);
             child = fork();
         } else {
             /* fork()に失敗 */
@@ -65,6 +64,7 @@ int main(int argc, char *argv[])
             exit_errmesg("fork()");
         }
     }
+    printf("%d個のプロセスがあらかじめ生成されました。\n", process_pre);
 
     while(1){
         sock_accepted = accept(sock_listen, NULL, NULL);

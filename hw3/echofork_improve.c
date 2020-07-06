@@ -7,6 +7,7 @@
 #define BUFSIZE 50   /* バッファサイズ */
 #define DEFAULT_PORT 50000
 #define DEFAULT_PROCESS_LIMIT 10
+#define  DEFAULT_PROCESS_PRE 5
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -17,6 +18,7 @@ int main(int argc, char *argv[])
     int sock_listen, sock_accepted;
     int n_process = 0;
     int process_limit = DEFAULT_PROCESS_LIMIT;
+    int process_pre = DEFAULT_PROCESS_PRE;
     pid_t child;
     char buf[BUFSIZE];
     int strsize;
@@ -30,7 +32,7 @@ int main(int argc, char *argv[])
 
         switch( c ){
             case 'l' :
-                process_limit = atoi(optarg);
+                process_pre = atoi(optarg);
                 break;
             case 'p':
                 port_number = atoi(optarg);
@@ -49,7 +51,7 @@ int main(int argc, char *argv[])
     sock_listen = init_tcpserver(port_number, 5);
     child = fork();
 
-    for(int i = 1;i <  process_limit; i++) {
+    for(int i = 1;i <  process_pre; i++) {
         if (child == 0) {
             // これがないと、fork(): Invalid argumentとなる
         }else if (child > 0) {
@@ -64,23 +66,20 @@ int main(int argc, char *argv[])
         }
     }
 
-        while(1){
-            sock_accepted = accept(sock_listen, NULL, NULL);
-            do
+    while(1){
+        sock_accepted = accept(sock_listen, NULL, NULL);
+        do
+        {
+            if ((strsize = recv(sock_accepted, buf, BUFSIZE, 0)) == -1)
             {
-                if ((strsize = recv(sock_accepted, buf, BUFSIZE, 0)) == -1)
-                {
-                    exit_errmesg("recv()");
-                }
-                if (send(sock_accepted, buf, strsize, 0) == -1)
-                {
-                    exit_errmesg("send()");
-                }
-            } while (buf[0] != '\r'); /* 改行コードを受信するまで繰り返す */
-            close(sock_accepted);
-        }
-
-
+                exit_errmesg("recv()");
+            }
+            if (send(sock_accepted, buf, strsize, 0) == -1)
+            {
+                exit_errmesg("send()");
+            }
+        } while (buf[0] != '\r'); /* 改行コードを受信するまで繰り返す */
+        close(sock_accepted);
         /* ゾンビプロセスの回収 */
         if( n_process == process_limit ){
             child= wait(NULL); /* 制限数を超えたら 空きが出るまでブロック */
@@ -90,6 +89,6 @@ int main(int argc, char *argv[])
         while( (child=waitpid(-1, NULL, WNOHANG ))>0 ){
             n_process--;
         }
+    }
 
-    /* never reached */
 }

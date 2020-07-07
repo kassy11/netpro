@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
         {
             exit_errmesg("pthread_create()");
         }
+        printf("%d個目のスレッドが生成されました。\n", i+1);
     }
-    printf("%d個のスレッドがあらかじめ生成されました\n", thread_pre);
 
     while (1);
 

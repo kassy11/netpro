@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
         }else if (child > 0) {
             // 親プロセスのとき
             n_process++;
+            printf("Child Process is created.[%d]\n", child);
             child = fork();
         } else {
             /* fork()に失敗 */
@@ -64,7 +65,6 @@ int main(int argc, char *argv[])
             exit_errmesg("fork()");
         }
     }
-    printf("%d個のプロセスがあらかじめ生成されました。\n", process_pre);
 
     while(1){
         sock_accepted = accept(sock_listen, NULL, NULL);

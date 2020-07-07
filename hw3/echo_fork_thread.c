@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
             }else if (child > 0) {
                 // 親プロセスのとき
                 n_process++;
+                printf("プロセス[%d]が生成されました。\n", child);
                 child = fork();
             } else {
                 /* fork()に失敗 */
@@ -123,6 +124,7 @@ int main(int argc, char *argv[])
             if (pthread_create(&tid, NULL, echo_thread, (void *) tharg) != 0) {
                 exit_errmesg("pthread_create()");
             }
+            printf("%d個目のスレッドが生成されました。\n", i+1);
         }
         while (1);
 

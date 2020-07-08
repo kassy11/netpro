@@ -67,6 +67,8 @@ void question_loop()
     }
 }
 
+// N_client個のクライアントからの接続を受け付け、各クライアントにユーザ名 を送信させて、
+// それらのクライアント情報を Client[]構造体配列に格納する
 static int client_login(int sock_listen)
 {
     int client_id,sock_accepted;
@@ -93,6 +95,7 @@ static int client_login(int sock_listen)
         strncpy(Client[client_id].name, loginname, NAMELENGTH);
     }
 
+    // 最大のソケット番号を返す（select()で使用する）
     return(sock_accepted);
 
 }
@@ -106,6 +109,8 @@ static void send_question( char *question )
     }
 }
 
+// 結果の受信
+// サーバプログラムの中核
 static void receive_answer()
 {
     fd_set mask, readfds;
@@ -123,21 +128,22 @@ static void receive_answer()
     }
 
     // 正解を送ってきたクライアントの数
-    // TODO:
-    answered =  ;
+    answered = 0;
     while( answered < N_client ){
 
         /* 受信データの有無をチェック */
         readfds = mask;
+
         // データを送ってきたクライアントを知らべる
+        // select()の第１引数は 監視するディスクリプタ番号のうち 最も大きいもの＋１ を指定することに注意
         select( Max_sd+1, &readfds, NULL, NULL, NULL );
 
         for( client_id=0; client_id<N_client; client_id++ ){
 
+            // 受信があったかどうか確認
             if( FD_ISSET(Client[client_id].sock, &readfds) ){
 
-                // TODO:
-                strsize = Recv( , Buf, BUFLEN-1,0);
+                strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
                 Buf[strsize]='\0';
 
                 if( check_answer(Buf) ){  /* 解答が正しければ */

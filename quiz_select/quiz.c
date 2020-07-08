@@ -1,3 +1,6 @@
+// オプションによってクライアントかサーバのどちらかのプログラムを呼び出している
+// 両方のプログラムで共有している
+
 /*
   quiz.c
 */
@@ -62,7 +65,7 @@ int main(int argc, char *argv[])
     switch(mode){
 
         case 'S':
-            quiz_server(port_number, num_client);  /* サーバ部分ができたらコメントを外す */
+            quiz_server(port_number, num_client);
             break;
         case 'C':
             quiz_client(servername, port_number);

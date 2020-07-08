@@ -1,3 +1,5 @@
+// 単にサーバから送られてきた文字があれば それを表示し、キーボードからの入力があればそれをサーバに送信する
+
 /*
   quiz_client.c
 */
@@ -21,19 +23,23 @@ void quiz_client(char* servername, int port_number)
     printf("Connected.\n");
 
     /* ビットマスクの準備 */
+    // fd_set型変数maskの初期化
     FD_ZERO(&mask);
+    // maskの第0番目とsock番目を１にする、ビットが1であれば監視をするという
     FD_SET(0, &mask);
     FD_SET(sock, &mask);
-    // maskの第0番目とsock番目を１にする、ビットが1であれば監視をするという
-    // 標準入力（キーボード）と サーバとの接続用に開いたソケットを監視する
+    // 標準入力（キーボード）0番目と サーバとの接続用に開いたソケットsock番目を監視する
 
     for(;;){
 
         /* 受信データの有無をチェック */
+        // サーバからの入力があるかをselect()で確認する
         readfds = mask;
         select(sock+1, &readfds, NULL, NULL, NULL);
 
         if( FD_ISSET(0, &readfds) ){
+            // FD_ISSET(0, &readfds)が真であればキーボードから入力があったとわかる→送信
+
             /* キーボードから文字列を入力する */
             fgets(s_buf, S_BUFSIZE, stdin);
             strsize = strlen(s_buf);
@@ -42,6 +48,8 @@ void quiz_client(char* servername, int port_number)
         }
 
         if( FD_ISSET(sock, &readfds) ){
+            // FD_ISSET(sock, &readgds)でサーバからパケットが届いているか確認できる→受信
+
             /* サーバから文字列を受信する */
             strsize = Recv(sock, r_buf, R_BUFSIZE-1, 0);
             r_buf[strsize] = '\0';

@@ -35,6 +35,7 @@ void quiz_client(char* servername, int port_number)
         /* 受信データの有無をチェック */
         // サーバからの入力があるかをselect()で確認する
         readfds = mask;
+        // select()でディスクリプタの状態を監視する
         select(sock+1, &readfds, NULL, NULL, NULL);
 
         if( FD_ISSET(0, &readfds) ){

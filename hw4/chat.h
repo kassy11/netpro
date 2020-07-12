@@ -1,7 +1,3 @@
-//
-// Created by Kotaro Kashihara on 2020/07/12.
-//
-
 #ifndef HW4_CHAT_H
 #define HW4_CHAT_H
 
@@ -15,6 +11,9 @@ void chat_client(char* servername, int port_number);
 
 /* クライアントの初期化 */
 void init_client(int sock_listen, int n_client);
+
+// チャットのメインループ
+void chat_loop();
 
 /* Accept関数(エラー処理つき) */
 int Accept(int s, struct sockaddr *addr, socklen_t *addrlen);

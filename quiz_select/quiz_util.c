@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <sys/select.h>
 
-#define NAMELENGTH 20 /* ログイン名の長さ制限 */
+#define NAMELENGTH 50 /* ログイン名の長さ制限 */
 #define BUFLEN 500    /* 通信バッファサイズ */
 
 /* 各クライアントのユーザ情報を格納する構造体の定義 */
@@ -39,7 +39,7 @@ void init_client(int sock_listen, int n_client)
     }
     // client_info Client[N_client];と同じ意味だが、これではコンパイルできないので、、
 
-    if( (Ranking=(int *)malloc(N_client*sizeof(client_info)))==NULL ){
+    if( (Ranking=(int *)malloc(N_client*sizeof(*Ranking)))==NULL ){
         exit_errmesg("malloc()");
     }
 
@@ -59,7 +59,8 @@ void question_loop()
         /* 問題の送信 */
         send_question( question );
 
-        /* 解答の受信 */
+        // 下２つここがおかしい？
+
         receive_answer();
 
         /* 結果の表示 */
@@ -93,6 +94,8 @@ static int client_login(int sock_listen)
         /* ユーザ情報を保存 */
         Client[client_id].sock = sock_accepted ;
         strncpy(Client[client_id].name, loginname, NAMELENGTH);
+        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id ,Client[client_id].name);
+        // ここまではいけてるので名前の問題は別にある
     }
 
     // 最大のソケット番号を返す（select()で使用する）
@@ -169,7 +172,7 @@ static void send_result()
         /* 順位を表す文字列を作成 */
         // snprintfは画面でなく、指定した 文字配列に書き出す
         len=snprintf(Buf, BUFLEN, "[%d]\t%s\n",
-                     rank+1, Client[client_id].name );
+                     rank+1, Client[rank].name );
 
         /* 順位データを送信する */
         for(client_id=0; client_id<N_client; client_id++){

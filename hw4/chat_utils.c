@@ -140,7 +140,28 @@ static void send_message( int msg_sender_client )
     int client_id;
     char *msg = chop_nl(Client[msg_sender_client].msg);
     int len = snprintf(Buf, BUFLEN, "\x1b[34m <message from Mr.%s> %s \033[m\n",
-            Client[msg_sender_client].name, msg);
+                       Client[msg_sender_client].name, msg);
+
+    // ユーザごとにメッセージの色を変える
+    switch (msg_sender_client) {
+        case 0:
+            len = snprintf(Buf, BUFLEN, "\x1b[34m <message from Mr.%s> %s \033[m\n",
+                           Client[msg_sender_client].name, msg);
+            break;
+        case 1:
+            len = snprintf(Buf, BUFLEN, "\x1b[35m <message from Mr.%s> %s \033[m\x1b[0m\n",
+                           Client[msg_sender_client].name, msg);
+            break;
+        case 2:
+            len = snprintf(Buf, BUFLEN, "\x1b[36m <message from Mr.%s> %s \033[m\x1b[0m\n",
+                           Client[msg_sender_client].name, msg);
+            break;
+        default:
+            len = snprintf(Buf, BUFLEN, "\x1b[36m <message from Mr.%s> %s \033[m\x1b[0m\n",
+                           Client[msg_sender_client].name, msg);
+            break;
+    }
+
 
     for(client_id=0; client_id<N_client; client_id++){
         Send(Client[client_id].sock, Buf, len,0);

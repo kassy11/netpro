@@ -39,7 +39,7 @@ void init_client(int sock_listen, int n_client)
     }
     // client_info Client[N_client];と同じ意味だが、これではコンパイルできないので、、
 
-    if( (Ranking=(int *)malloc(N_client*sizeof(*Ranking)))==NULL ){
+    if( (Ranking=(int *)malloc(N_client*sizeof(Ranking)))==NULL ){
         exit_errmesg("malloc()");
     }
 
@@ -172,7 +172,7 @@ static void send_result()
         /* 順位を表す文字列を作成 */
         // snprintfは画面でなく、指定した 文字配列に書き出す
         len=snprintf(Buf, BUFLEN, "[%d]\t%s\n",
-                     rank+1, Client[rank].name );
+                     rank+1, Client[Ranking[rank]].name );
 
         /* 順位データを送信する */
         for(client_id=0; client_id<N_client; client_id++){

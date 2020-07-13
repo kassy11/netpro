@@ -129,8 +129,15 @@ static int receive_message()
 
 static void send_message( int msg_sender_client )
 {
+    int client_id;
     char *msg = chop_nl(Client[msg_sender_client].msg);
-    Send(Client[msg_sender_client].sock, msg, strlen(msg),0);
+    int len = snprintf(Buf, BUFLEN, "[%s] %s\n",
+            Client[msg_sender_client].name, msg);
+
+    for(client_id=0; client_id<N_client; client_id++){
+        Send(Client[client_id].sock, Buf, len,0);
+    }
+
 }
 
 

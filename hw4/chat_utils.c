@@ -77,9 +77,15 @@ static int client_login(int sock_listen)
 void chat_loop()
 {
     int msg_sender_client;
+    int client_id;
+    static char msgprompt[]="Input your message ↓: \n";
+
 
     for(;;){
-        // メッセージを受け取って、メッセージを伴ったユーザ構造体を受け取る
+        for(client_id=0; client_id<N_client; client_id++){
+            Send(Client[client_id].sock, msgprompt, strlen(msgprompt), 0);
+        }
+        // メッセージを送信したユーザのIDを受け取る
         msg_sender_client = receive_message();
 
         // メッセージとユーザ名を表示
@@ -111,6 +117,8 @@ static int receive_message()
 
 
     for( client_id=0; client_id<N_client; client_id++ ){
+
+
         // 受信があったかどうか確認
         if( FD_ISSET(Client[client_id].sock, &readfds) ){
             strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
@@ -131,7 +139,7 @@ static void send_message( int msg_sender_client )
 {
     int client_id;
     char *msg = chop_nl(Client[msg_sender_client].msg);
-    int len = snprintf(Buf, BUFLEN, "[%s] %s\n",
+    int len = snprintf(Buf, BUFLEN, "\x1b[34m <message from Mr.%s> %s \033[m\n",
             Client[msg_sender_client].name, msg);
 
     for(client_id=0; client_id<N_client; client_id++){
@@ -140,28 +148,6 @@ static void send_message( int msg_sender_client )
 
 }
 
-
-//static void send_message(char *msg)
-//{
-//    int client_id;
-//    int len;
-//
-//    for(rank=0; rank<N_client; rank++){
-//        /* 順位を表す文字列を作成 */
-//        // snprintfは画面でなく、指定した 文字配列に書き出す
-//        len=snprintf(Buf, BUFLEN, "[%d]\t%s\n",
-//                     rank+1, Client[client_id].name );
-//
-//        /* 順位データを送信する */
-//        for(client_id=0; client_id<N_client; client_id++){
-//            Send(Client[client_id].sock, Buf, len, 0);
-//        }
-//
-//    }
-//
-//    sender_name=snprintf(Buf, BUFLEN, "[%s]\n",Client[client_id].name);
-//    Send(Client[client_id].sock, msg, len, 0);
-//}
 
 // 文字列の改行を取り除く
 static char *chop_nl(char *s)

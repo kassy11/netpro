@@ -1,5 +1,3 @@
-// 単にサーバから送られてきた文字があれば それを表示し、キーボードからの入力があればそれをサーバに送信する
-// サーバ側で表示を制御する
 
 #include "chat.h"
 #include "mynet.h"
@@ -9,7 +7,8 @@
 #define S_BUFSIZE 100   /* 送信用バッファサイズ */
 #define R_BUFSIZE 100   /* 受信用バッファサイズ */
 
-void quiz_client(char* servername, int port_number)
+// クライントのメインの処理
+void chat_client(char* servername, int port_number)
 {
     int sock;
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
@@ -26,7 +25,7 @@ void quiz_client(char* servername, int port_number)
     // maskの第0番目とsock番目を１にする、ビットが1であれば監視をするという意味
     FD_SET(0, &mask);
     FD_SET(sock, &mask);
-    // 標準入力（キーボード）0番目と サーバとの接続用に開いたソケットsock番目を監視する
+    // 標準入力（0番目）と サーバとの接続用に開いたソケット（sock番目）を監視する
 
     for(;;){
 
@@ -53,7 +52,6 @@ void quiz_client(char* servername, int port_number)
             r_buf[strsize] = '\0';
             printf("%s",r_buf);
             fflush(stdout); /* バッファの内容を強制的に出力 */
-
         }
 
     }

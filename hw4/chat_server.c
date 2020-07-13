@@ -2,7 +2,6 @@
 #include "mynet.h"
 #include <stdlib.h>
 #include <unistd.h>
-
 #define CHAT_MEMBER_NUM 3
 
 // チャットを受け付ける関数
@@ -17,8 +16,7 @@ void chat_server(int port_number) {
 
     close(sock_listen);
 
-    // メインの処理を書く：
+    // チャットのメインの処理
     // ３人のユーザからのメッセージを受信して表示する
-
     chat_loop();
 }

@@ -1,5 +1,3 @@
-// チャットプログラムのmain関数
-
 #include "chat.h"
 #include "mynet.h"
 #include <stdlib.h>

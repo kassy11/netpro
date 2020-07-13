@@ -12,4 +12,4 @@ quiz: ${OBJS}
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:
-	${RM} *.o quiz *~
+	${RM} *.o

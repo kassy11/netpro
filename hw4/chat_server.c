@@ -9,7 +9,7 @@ void chat_server(int port_number) {
     int sock_listen;
 
     /* サーバの初期化 */
-    sock_listen = init_tcpserver(50000, 5);
+    sock_listen = init_tcpserver(port_number, 5);
 
     /* クライアントの接続 */
     init_client(sock_listen, CHAT_MEMBER_NUM);
@@ -17,6 +17,5 @@ void chat_server(int port_number) {
     close(sock_listen);
 
     // チャットのメインの処理
-    // ３人のユーザからのメッセージを受信して表示する
     chat_loop();
 }

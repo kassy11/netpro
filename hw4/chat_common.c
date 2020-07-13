@@ -9,7 +9,6 @@ int Accept(int s, struct sockaddr *addr, socklen_t *addrlen)
     return(r);
 }
 
-// send()にエラー処理も含めたラッパー関数
 int Send(int s, void *buf, size_t len, int flags)
 {
     int r;

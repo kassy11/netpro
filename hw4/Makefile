@@ -9,4 +9,4 @@ chat: ${OBJS}
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:
-	${RM} *.o chat *~
+	${RM} *.o 

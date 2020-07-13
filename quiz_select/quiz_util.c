@@ -173,6 +173,7 @@ static void send_result()
         // snprintfは画面でなく、指定した 文字配列に書き出す
         len=snprintf(Buf, BUFLEN, "[%d]\t%s\n",
                      rank+1, Client[Ranking[rank]].name );
+        // Ranking[rank]にrank+1位のユーザのclient_idが入ってる
 
         /* 順位データを送信する */
         for(client_id=0; client_id<N_client; client_id++){

@@ -15,13 +15,11 @@ typedef struct{
     char msg[MESSAGEMAXLENGTH];
 } client_info;
 
-/* プライベート変数 */
 static int N_client;         /* クライアントの数 */
 static client_info *Client;  /* クライアントの情報 */
 static int Max_sd;               /* ディスクリプタ最大値 */
 static char Buf[BUFLEN];     /* 通信用バッファ */
 
-/* プライベート関数 */
 static int client_login(int sock_listen);
 static int receive_message();
 static void send_message(int msg_sender_client);
@@ -40,8 +38,6 @@ void init_client(int sock_listen, int n_client)
     Max_sd = client_login(sock_listen);
 }
 
-// N_client個のクライアントからの接続を受け付け、各クライアントにユーザ名 を送信させて、
-// それらのクライアント情報を Client[]構造体配列に格納する
 static int client_login(int sock_listen)
 {
     int client_id,sock_accepted;
@@ -74,9 +70,10 @@ static int client_login(int sock_listen)
     return(sock_accepted);
 }
 
+// チャットのメインループ
 void chat_loop()
 {
-    int msg_sender_client;
+    int msg_sender_client; // メッセージを送信したclient_idを保存する
     int client_id;
     static char msgprompt[]="Input your message ↓: \n";
 
@@ -85,16 +82,15 @@ void chat_loop()
         for(client_id=0; client_id<N_client; client_id++){
             Send(Client[client_id].sock, msgprompt, strlen(msgprompt), 0);
         }
-        // メッセージを送信したユーザのIDを受け取る
+        // メッセージを送信したclient_id受け取る
         msg_sender_client = receive_message();
 
-        // メッセージとユーザ名を表示
+        // 送信されたメッセージとユーザ名を表示
         send_message(msg_sender_client);
     }
 }
 
-// 結果の受信
-// サーバプログラムの中核
+// クライアントからのメッセージを受信して、そのclient_idを返す
 static int receive_message()
 {
     fd_set mask, readfds;
@@ -108,18 +104,13 @@ static int receive_message()
         FD_SET(Client[client_id].sock, &mask);
     }
 
-
     /* 受信データの有無をチェック */
     readfds = mask;
 
     // データを送ってきたクライアントを知らべる
     select( Max_sd+1, &readfds, NULL, NULL, NULL );
 
-
     for( client_id=0; client_id<N_client; client_id++ ){
-
-
-        // 受信があったかどうか確認
         if( FD_ISSET(Client[client_id].sock, &readfds) ){
             strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
             Buf[strsize]='\0';
@@ -135,6 +126,7 @@ static int receive_message()
     return val;
 }
 
+// あるクライアントから送信されたメッセージをクライアント全員に送信する
 static void send_message( int msg_sender_client )
 {
     int client_id;
@@ -162,13 +154,12 @@ static void send_message( int msg_sender_client )
             break;
     }
 
-
+    // メッセージを送信
     for(client_id=0; client_id<N_client; client_id++){
         Send(Client[client_id].sock, Buf, len,0);
     }
 
 }
-
 
 // 文字列の改行を取り除く
 static char *chop_nl(char *s)

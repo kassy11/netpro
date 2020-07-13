@@ -19,7 +19,7 @@ void quiz_client(char* servername, int port_number)
     fd_set mask, readfds;
 
     /* サーバに接続する */
-    sock = init_tcpclient("localhost", 50000);
+    sock = init_tcpclient(servername, port_number);
     printf("Connected.\n");
 
     /* ビットマスクの準備 */

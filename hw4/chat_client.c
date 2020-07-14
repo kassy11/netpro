@@ -46,9 +46,12 @@ void chat_client(char* servername, int port_number)
 
         if( FD_ISSET(sock, &readfds) ){
             // FD_ISSET(sock, &readgds)でサーバからパケットが届いているか確認できる→受信
-
             /* サーバから文字列を受信する */
             strsize = Recv(sock, r_buf, R_BUFSIZE-1, 0);
+            if(strsize == 0){
+                close(sock);
+                exit_errmesg("server is down");
+            }
             r_buf[strsize] = '\0';
             printf("%s",r_buf);
             fflush(stdout); /* バッファの内容を強制的に出力 */

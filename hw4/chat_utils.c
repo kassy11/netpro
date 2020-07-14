@@ -114,6 +114,7 @@ static int receive_message()
         if( FD_ISSET(Client[client_id].sock, &readfds) ){
             strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
             Buf[strsize]='\0';
+            memset(Client[client_id].msg, 0, sizeof(Client[client_id].msg));
             if(strsize <= MESSAGEMAXLENGTH){
                 strncpy(Client[client_id].msg, Buf, strsize);
             }else{

@@ -1,6 +1,7 @@
 
 #include "mynet.h"
 
+// udpソケットを作成してbindするまで
 int init_udpserver(in_port_t myport){
     struct sockaddr_in my_adrs;
     int sock;

@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     }
 
     // UDPでは最初に作成したソケットをそのまま通信に使う
+    // listen()とaccept()は不要
 
     for(;;){
         /* 文字列をクライアントから受信する */

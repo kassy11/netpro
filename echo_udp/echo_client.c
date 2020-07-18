@@ -40,16 +40,19 @@ int main(int argc, char *argv[])
     memcpy(&server_adrs.sin_addr, server_host->h_addr, server_host->h_length);
 
     /* ソケットをDGRAMモードで作成する */
+    // TCPのときはSTREAMモードだった
     if((sock = socket(PF_INET, SOCK_DGRAM, 0) ) == -1){
         exit_errmesg("socket()");
     }
+
+    // connect()は不要！
 
     /* キーボードから文字列を入力する */
     fgets(s_buf, S_BUFSIZE, stdin);
     strsize = strlen(s_buf);
 
     /* 文字列をサーバに送信する */
-    // UDPでは通信に先立ってコネクションを張らないので、原則として データを送信する毎に相手先アドレスの設定が必要
+    // UDPでは通信に先立ってコネクションを張らないので、原則として データを送信する毎に相手先アドレスの設定が必要→第４引数以下
     if( sendto(sock, s_buf, strsize, 0,  (struct sockaddr *)&server_adrs, sizeof(server_adrs)) == -1 ){
         exit_errmesg("sendto()");
     }
@@ -57,7 +60,10 @@ int main(int argc, char *argv[])
     /* サーバから文字列を受信して表示 */
     // UDPでは どこからパケットが到着するかわからないので、到着してから調べることができるように recvfrom()関数を使う
     from_len = sizeof(from_adrs);
+    // from_lenには、recvfrom()呼び出し時には第５引数で指定した構造体のサイズを指定しておき,
+    // 戻ってきたときには、実際の相手先のアドレスのサイズが 入っている
     if((strsize= recvfrom(sock, r_buf, R_BUFSIZE-1, 0, (struct sockaddr*)&from_adrs, &from_len) ) == -1){
+        // 第５〜６引数にはどこからのパケットかを調べる必要がなければNULLでもいい
         exit_errmesg("recvfrom()");
     }
     r_buf[strsize] = '\0';

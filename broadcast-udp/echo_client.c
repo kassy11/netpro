@@ -31,15 +31,18 @@ int main(int argc, char *argv[])
 
     /* ブロードキャストアドレスの情報をsockaddr_in構造体に格納する */
     set_sockaddr_in(&broadcast_adrs, argv[1], (in_port_t)atoi(argv[2]));
+//    set_sockaddr_in_broadcast(&broadcast_adrs, (in_port_t)atoi(argv[2]));
 
     /* ソケットをDGRAMモードで作成する */
     sock =socket(PF_INET, SOCK_DGRAM, 0);
 
     /* ソケットをブロードキャスト可能にする */
+    // setsockopt()でブロードキャストの設定
     if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST,
                   (void *)&broadcast_sw, sizeof(broadcast_sw)) == -1){
         exit_errmesg("setsockopt()");
     }
+    // ここはmynetの set_sockaddr_in_broadcastで代用できる
 
     /* ビットマスクの準備 */
     FD_ZERO(&mask);
@@ -54,6 +57,7 @@ int main(int argc, char *argv[])
            (struct sockaddr *)&broadcast_adrs, sizeof(broadcast_adrs) );
 
     /* サーバから文字列を受信して表示 */
+    // 複数のサーバから受け取れるようにrecvfromを繰り返す
     for(;;){
 
         /* 受信データの有無をチェック */
@@ -61,6 +65,9 @@ int main(int argc, char *argv[])
         timeout.tv_sec = TIMEOUT_SEC;
         timeout.tv_usec = 0;
 
+        // select()を用いてタイムアウト処理を行っている
+        // selectから戻ってきた時,timeoutには残り時間が入ってる
+        // →selectで変更されるので毎回初期化が必要
         if( select( sock+1, &readfds, NULL, NULL, &timeout)==0 ){
             printf("Time out.\n");
             break;
@@ -70,6 +77,8 @@ int main(int argc, char *argv[])
         strsize = Recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
                            (struct sockaddr *)&from_adrs, &from_len);
         r_buf[strsize] = '\0';
+
+        // 複数のサーバからのアドレスを同時に表示する
         printf("[%s] %s",inet_ntoa(from_adrs.sin_addr), r_buf);
     }
 

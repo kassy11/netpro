@@ -1,5 +1,4 @@
 // あらかじめ決まった数の子プロセスを生成しておき、それらの子プロセスがそれぞれクライアントからの接続を待つように改良
-// プロセスの数を指定できるようにする
 
 #include "mynet.h"
 #include <sys/wait.h>
@@ -54,11 +53,13 @@ int main(int argc, char *argv[])
     for(int i = 0;i <  process_pre; i++) {
         if (child == 0) {
             // これがないと、fork(): Invalid argumentとなる
+            close(sock_accepted);
         }else if (child > 0) {
             // 親プロセスのとき
             n_process++;
             printf("Child Process is created.[%d]\n", child);
             child = fork();
+            close(sock_accepted);
         } else {
             /* fork()に失敗 */
             close(sock_listen);

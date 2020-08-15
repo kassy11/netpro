@@ -11,4 +11,4 @@ echofork: echofork.o
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:
-	${RM} *.o echo_server2 echo_client2 *~
+	${RM} *.o

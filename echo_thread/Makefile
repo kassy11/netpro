@@ -8,4 +8,4 @@ echo_server_thread: echo_server_thread.o
 	${CC} ${CFLAGS} -o $@ $^ ${MYLIB}
 
 clean:
-	${RM} *.o echo_server_thread *~
+	${RM} *.o

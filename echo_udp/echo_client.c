@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     strsize = strlen(s_buf);
 
     /* 文字列をサーバに送信する */
-    // UDPでは通信に先立ってコネクションを張らないので、原則として データを送信する毎に相手先アドレスの設定が必要→第４引数以下
+    // UDPでは通信に先立ってコネクションを張らないので、原則として データを送信する毎に相手先アドレスの設定が必要→第5引数以下
     if( sendto(sock, s_buf, strsize, 0,  (struct sockaddr *)&server_adrs, sizeof(server_adrs)) == -1 ){
         exit_errmesg("sendto()");
     }
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     // UDPでは どこからパケットが到着するかわからないので、到着してから調べることができるように recvfrom()関数を使う
     from_len = sizeof(from_adrs);
     // from_lenには、recvfrom()呼び出し時には第５引数で指定した構造体のサイズを指定しておき,
-    // 戻ってきたときには、実際の相手先のアドレスのサイズが 入っている
+    // 戻ってきたときには、実際の相手先のアドレスのサイズが入っている
     if((strsize= recvfrom(sock, r_buf, R_BUFSIZE-1, 0, (struct sockaddr*)&from_adrs, &from_len) ) == -1){
         // 第５〜６引数にはどこからのパケットかを調べる必要がなければNULLでもいい
         exit_errmesg("recvfrom()");

@@ -2,8 +2,20 @@
   echo_server.c (UDP版)
 */
 #include "mynet.h"
+#include <arpa/inet.h>
 
 #define BUFSIZE 512   /* バッファサイズ */
+
+void show_adrsinfo(struct sockaddr_in *adrs_in)
+{
+    int  port_number;
+    char ip_adrs[20];
+
+    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
+    port_number = ntohs(adrs_in->sin_port);
+
+    printf("%s[%d]\n",ip_adrs,port_number);
+}
 
 int main(int argc, char *argv[])
 {
@@ -52,6 +64,8 @@ int main(int argc, char *argv[])
             exit_errmesg("recvfrom()");
         }
 
+        show_adrsinfo(&from_adrs);
+
         /* 文字列をクライアントに送信する */
         if(sendto(sock, buf, strsize, 0,
                   (struct sockaddr *)&from_adrs, sizeof(from_adrs)) == -1 ){
@@ -62,3 +76,4 @@ int main(int argc, char *argv[])
     close(sock);
 
 }
+

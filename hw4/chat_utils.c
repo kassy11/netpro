@@ -70,7 +70,7 @@ static int client_login(int sock_listen)
     return(sock_accepted);
 }
 
-// チャットのメインループ
+// チャットサーバのメインループ
 void chat_loop()
 {
     int msg_sender_client; // メッセージを送信したclient_idを保存する
@@ -112,9 +112,11 @@ static int receive_message()
 
     for( client_id=0; client_id<N_client; client_id++ ){
         if( FD_ISSET(Client[client_id].sock, &readfds) ){
+            // ユーザのメッセージをBufで受け取る
             strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
             Buf[strsize]='\0';
-            memset(Client[client_id].msg, 0, sizeof(Client[client_id].msg));
+
+            // Bufで受信したメッセージをユーザ構造体に保存する
             if(strsize <= MESSAGEMAXLENGTH){
                 strncpy(Client[client_id].msg, Buf, strsize);
             }else{
@@ -132,8 +134,7 @@ static void send_message( int msg_sender_client )
 {
     int client_id;
     char *msg = chop_nl(Client[msg_sender_client].msg);
-    int len = snprintf(Buf, BUFLEN, "\x1b[34m <message from Mr.%s> %s \033[m\n",
-                       Client[msg_sender_client].name, msg);
+    int len;
 
     // ユーザごとにメッセージの色を変える
     switch (msg_sender_client) {
@@ -160,6 +161,10 @@ static void send_message( int msg_sender_client )
         Send(Client[client_id].sock, Buf, len,0);
     }
 
+    // 今回以前のユーザ構造体のメッセージは初期化しておく
+    // TODO:初期化できてないみたい
+    memset(Client[msg_sender_client].msg, '\0', sizeof(Client[msg_sender_client].msg));
+//    Client[msg_sender_client].msg = ;
 }
 
 // 文字列の改行を取り除く

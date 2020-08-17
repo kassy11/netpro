@@ -16,6 +16,7 @@ typedef struct{
 } client_info;
 
 /* プライベート変数 */
+// このファイル内のみで参照できる
 static int N_client;         /* クライアントの数 */
 static client_info *Client;  /* クライアントの情報 */
 static int Max_sd;               /* ディスクリプタ最大値 */
@@ -23,12 +24,14 @@ static int *Ranking;         /* 順位の保存用 */
 static char Buf[BUFLEN];     /* 通信用バッファ */
 
 /* プライベート関数 */
+// このファイル内のみで実行できる関数
 static int client_login(int sock_listen);
 static void send_question( char *question );
 static void receive_answer();
 static void send_result();
 static char *chop_nl(char *s);
 
+// 各クライアントとのaccept()処理
 void init_client(int sock_listen, int n_client)
 {
     N_client = n_client;
@@ -37,13 +40,15 @@ void init_client(int sock_listen, int n_client)
     if( (Client=(client_info *)malloc(N_client*sizeof(client_info)))==NULL ){
         exit_errmesg("malloc()");
     }
-    // client_info Client[N_client];と同じ意味だが、これではコンパイルできないので、、
+    // client_info Client[N_client];と同じ意味だが、これではコンパイルできないのでmallocを使用する
+    // Rankingも同じ
 
     if( (Ranking=(int *)malloc(N_client*sizeof(Ranking)))==NULL ){
         exit_errmesg("malloc()");
     }
 
     /* クライアントのログイン処理 */
+    // selectで使うために、受け付けたソケット番号の最大値を受け取る
     Max_sd = client_login(sock_listen);
 
 }
@@ -58,8 +63,6 @@ void question_loop()
 
         /* 問題の送信 */
         send_question( question );
-
-        // 下２つここがおかしい？
 
         receive_answer();
 
@@ -95,10 +98,9 @@ static int client_login(int sock_listen)
         Client[client_id].sock = sock_accepted ;
         strncpy(Client[client_id].name, loginname, NAMELENGTH);
         printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id ,Client[client_id].name);
-        // ここまではいけてるので名前の問題は別にある
     }
 
-    // 最大のソケット番号を返す（select()で使用する）
+    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
     return(sock_accepted);
 
 }
@@ -125,6 +127,7 @@ static void receive_answer()
 
     /* ビットマスクの準備 */
     // クライアントのソケット番号 Client[client_id].sock を監視するように設定
+    // つまりクライアントからの解答パケットを監視する
     FD_ZERO(&mask);
     for(client_id=0; client_id<N_client; client_id++){
         FD_SET(Client[client_id].sock, &mask);
@@ -146,6 +149,7 @@ static void receive_answer()
             // 受信があったかどうか確認
             if( FD_ISSET(Client[client_id].sock, &readfds) ){
 
+                // クライアントからの解答パケットを受信する
                 strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
                 Buf[strsize]='\0';
 
@@ -163,6 +167,7 @@ static void receive_answer()
     }
 }
 
+// 全クライアントにランキング結果を送信する
 static void send_result()
 {
     int rank, client_id;
@@ -171,6 +176,7 @@ static void send_result()
     for(rank=0; rank<N_client; rank++){
         /* 順位を表す文字列を作成 */
         // snprintfは画面でなく、指定した 文字配列に書き出す
+        // この場合はBufに書き出す
         len=snprintf(Buf, BUFLEN, "[%d]\t%s\n",
                      rank+1, Client[Ranking[rank]].name );
         // Ranking[rank]にrank+1位のユーザのclient_idが入ってる

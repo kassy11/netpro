@@ -5,14 +5,14 @@
 
 #define NAMELENGTH 20 /* ログイン名の長さ制限 */
 #define BUFLEN 500    /* 通信バッファサイズ */
-#define MESSAGEMAXLENGTH 140
+#define MESSAGEMAXLENGTH 500
 
 /* 各クライアントのユーザ情報を格納する構造体の定義 */
 // メッセージもユーザの構造体に保存・更新する
 typedef struct{
     int  sock;
     char name[NAMELENGTH];
-    char msg[MESSAGEMAXLENGTH];
+    char msg[MESSAGEMAXLENGTH+1];
 } client_info;
 
 static int N_client;         /* クライアントの数 */
@@ -85,6 +85,11 @@ void chat_loop()
         // メッセージを送信したclient_id受け取る
         msg_sender_client = receive_message();
 
+        // 3人以外なら
+        if(msg_sender_client < 0 || msg_sender_client > 2){
+            continue;
+        }
+
         // 送信されたメッセージとユーザ名を表示
         send_message(msg_sender_client);
     }
@@ -113,14 +118,19 @@ static int receive_message()
     for( client_id=0; client_id<N_client; client_id++ ){
         if( FD_ISSET(Client[client_id].sock, &readfds) ){
             // ユーザのメッセージをBufで受け取る
-            strsize = Recv(Client[client_id].sock , Buf, BUFLEN-1,0);
+            strsize = Recv(Client[client_id].sock , Buf, MESSAGEMAXLENGTH-1,0);
             Buf[strsize]='\0';
+            Client[client_id].msg[strsize] = '\0';
+
+            // TODO:ここでのstrncpyがおかしい？？
 
             // Bufで受信したメッセージをユーザ構造体に保存する
             if(strsize <= MESSAGEMAXLENGTH){
                 strncpy(Client[client_id].msg, Buf, strsize);
+                Client[client_id].msg[strsize+1] = '\0';
             }else{
-                strncpy(Client[client_id].msg, Buf, MESSAGEMAXLENGTH);
+                strncpy(Client[client_id].msg, Buf, MESSAGEMAXLENGTH-1);
+                Client[client_id].msg[MESSAGEMAXLENGTH] = '\0';
             }
             val = client_id;
             break;
@@ -164,7 +174,6 @@ static void send_message( int msg_sender_client )
     // 今回以前のユーザ構造体のメッセージは初期化しておく
     // TODO:初期化できてないみたい
     memset(Client[msg_sender_client].msg, '\0', sizeof(Client[msg_sender_client].msg));
-//    Client[msg_sender_client].msg = ;
 }
 
 // 文字列の改行を取り除く

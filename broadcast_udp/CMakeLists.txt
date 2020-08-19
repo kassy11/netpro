@@ -3,6 +3,6 @@ project(broadcast_udp C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(broadcast_udp main.c echo_client.c)
+add_executable(broadcast_udp echo_client.c)
 
 include_directories(../mynet)

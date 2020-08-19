@@ -1,4 +1,5 @@
 // キーボードから入力した文字列を特定のサーバ宛ではなく、ブロードキャストアドレス宛に送信する
+// もし同一ネットワーク 内に複数のサーバが起動していると、それら複数のサーバからそれぞれechoが返ってくる
 
 #include "mynet.h"
 #include <sys/select.h>
@@ -16,6 +17,8 @@ int main(int argc, char *argv[])
     socklen_t from_len;
 
     int sock;
+
+    // setsockoptに設定するブロードキャストのための変数
     int broadcast_sw=1;
     fd_set mask, readfds;
     struct timeval timeout;
@@ -24,17 +27,16 @@ int main(int argc, char *argv[])
     int strsize;
 
     /* 引数のチェックと使用法の表示 */
-    if( argc != 3 ){
+    if( argc != 2 ){
         fprintf(stderr,"Usage: %s broadcast_address Port_number\n", argv[0]);
         exit(1);
     }
 
     /* ブロードキャストアドレスの情報をsockaddr_in構造体に格納する */
-    set_sockaddr_in(&broadcast_adrs, argv[1], (in_port_t)atoi(argv[2]));
-//    set_sockaddr_in_broadcast(&broadcast_adrs, (in_port_t)atoi(argv[2]));
+    set_sockaddr_in_broadcast(&broadcast_adrs, (in_port_t)atoi(argv[1]));
 
     /* ソケットをDGRAMモードで作成する */
-    sock =socket(PF_INET, SOCK_DGRAM, 0);
+    sock = init_udpclient();
 
     /* ソケットをブロードキャスト可能にする */
     // setsockopt()でブロードキャストの設定
@@ -42,7 +44,6 @@ int main(int argc, char *argv[])
                   (void *)&broadcast_sw, sizeof(broadcast_sw)) == -1){
         exit_errmesg("setsockopt()");
     }
-    // ここはmynetの set_sockaddr_in_broadcastで代用できる
 
     /* ビットマスクの準備 */
     FD_ZERO(&mask);

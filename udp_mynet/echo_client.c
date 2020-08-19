@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     /* サーバから文字列を受信して表示 */
     from_len = sizeof(from_adrs);
 
-    Recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
+    strsize = Recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
                          (struct sockaddr *)&from_adrs, &from_len);
     r_buf[strsize] = '\0';
     printf("%s",r_buf);

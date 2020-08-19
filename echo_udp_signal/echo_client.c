@@ -1,3 +1,7 @@
+// alerm()を利用したタイムアウト処理
+// タイムアウト処理が必要な部分の手前で alarm()によりタイマーをセットしておき、
+// SIGALRMシグナルが送られてきたらタイムアウト処理をする
+
 #include "mynet.h"
 #include <signal.h>
 #include <errno.h>
@@ -15,7 +19,6 @@ int main(int argc, char *argv[])
     socklen_t from_len;
     int sock;
 
-    // シグナルに関する条件を格納する構造体
     struct sigaction action;
 
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
@@ -34,14 +37,16 @@ int main(int argc, char *argv[])
     set_sockaddr_in(&server_adrs, argv[1], (in_port_t)atoi(argv[2]));
 
     /* シグナルハンドラを設定する */
-    // シグナルが来たときに起動する関数を登録する
+    // シグナルを受け取ったときに起動する関数を設定する
     action.sa_handler = action_timeout;
-    // シグナルハンドラー中にすべてのシグナル割り込みを禁止する
+
+    // シグナルハンドラーの実行中に禁止するシグナルの種類の設定（このときは全部）
     if(sigfillset(&action.sa_mask) == -1){
         exit_errmesg("sigfillset()");
     }
     action.sa_flags = 0;
-    // どのシグナルを受信したときに処理を行うかを設定する
+
+    // どのシグナルを受信したときに処理を 行なうのか指定
     if(sigaction(SIGALRM, &action, NULL) == -1){
         exit_errmesg("sigaction()");
     }
@@ -61,7 +66,6 @@ int main(int argc, char *argv[])
     from_len = sizeof(from_adrs);
     if((strsize=recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
                          (struct sockaddr *)&from_adrs, &from_len)) == -1){
-        // recvfrom()実行時にタイムアウトとなった時、タイムアウトかエラーかを判別
         if(errno == EINTR){
             printf("Time out!\n");
             close(sock);
@@ -71,9 +75,6 @@ int main(int argc, char *argv[])
             exit_errmesg("recvfrom()");
         }
     }
-
-    // 正常に上記の処理を完了したときはタイムアウトをリセットする
-    // しないと皇族の処理でタイムアウトする可能性がある
     alarm(0);  /* alarmをリセット */
 
     r_buf[strsize] = '\0';

@@ -9,7 +9,6 @@ int init_udpclient()
         exit_errmesg("socket()");
     }
 
-    printf("socket作成\n");
     return(sock);
 }
 

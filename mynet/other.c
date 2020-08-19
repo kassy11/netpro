@@ -40,21 +40,19 @@ int Recv(int s, void *buf, size_t len, int flags)
 int Sendto( int sock, const void *s_buf, size_t strsize, int flags, const struct sockaddr *to, socklen_t tolen)
 {
     int r;
-    if( (r=sendto(sock, s_buf, strsize, 0, to, tolen))== -1){
+    if( (r=sendto(sock, s_buf, strsize, flags, to, tolen))== -1){
         exit_errmesg("sendto()");
     }
 
-    printf("sendtoおわり\n");
     return(r);
 }
 
 int Recvfrom(int sock, void *r_buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen) {
     int r;
-    if ((r = recvfrom(sock, r_buf, len, 0, from, fromlen)) == -1) {
+    if ((r = recvfrom(sock, r_buf, len, flags, from, fromlen)) == -1) {
         exit_errmesg("recvfrom()");
     }
 
-    printf("recvfrom\n");
     return (r);
 }

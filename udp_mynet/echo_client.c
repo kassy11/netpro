@@ -20,39 +20,25 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    /* サーバの情報の準備 */
+    set_sockaddr_in(&server_adrs, argv[1], (in_port_t)atoi(argv[2]));
     // udpソケットの準備
     sock = init_udpclient();
 
-    /* サーバの情報の準備 */
-    // ライブラリ関数
-    /* サーバの情報の準備 */
-    set_sockaddr_in(&server_adrs, argv[1], (in_port_t)atoi(argv[2]));
-    printf("sock %d\n", sock);
 
     /* キーボードから文字列を入力する */
     fgets(s_buf, S_BUFSIZE, stdin);
     strsize = strlen(s_buf);
 
-    printf("%d\n", strsize);
-    printf("キーボード入力\n");
 
-    /* 文字列をサーバに送信する */
-    // TODO:ここでとまる、sendtoがうまくいっていない？？
-//    Sendto(sock, s_buf, strsize, 0,
-//           (struct sockaddr *)&server_adrs, sizeof(server_adrs) );
+    Sendto(sock, s_buf, strsize, 0,
+           (struct sockaddr *)&server_adrs, sizeof(server_adrs));
 
-    if( sendto(sock, s_buf, strsize, 0,
-               (struct sockaddr *)&server_adrs, sizeof(server_adrs) ) == -1 ){
-        exit_errmesg("sendto()");
-    }
-
-    printf("sendto成功\n");
     /* サーバから文字列を受信して表示 */
     from_len = sizeof(from_adrs);
-    if((strsize=recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
-                         (struct sockaddr *)&from_adrs, &from_len)) == -1){
-        exit_errmesg("recvfrom()");
-    }
+
+    Recvfrom(sock, r_buf, R_BUFSIZE-1, 0,
+                         (struct sockaddr *)&from_adrs, &from_len);
     r_buf[strsize] = '\0';
     printf("%s",r_buf);
 

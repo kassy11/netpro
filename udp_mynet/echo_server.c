@@ -1,13 +1,26 @@
+/*
+  echo_server.c (UDP版)
+*/
 #include "mynet.h"
 #include <arpa/inet.h>
 
 #define BUFSIZE 512   /* バッファサイズ */
 
-void show_adrsinfo(struct sockaddr_in *adrs_in);
+void show_adrsinfo(struct sockaddr_in *adrs_in)
+{
+    int  port_number;
+    char ip_adrs[20];
+
+    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
+    port_number = ntohs(adrs_in->sin_port);
+
+    printf("%s[%d]\n",ip_adrs,port_number);
+}
 
 int main(int argc, char *argv[])
 {
     struct sockaddr_in from_adrs;
+
     int sock;
     socklen_t from_len;
 
@@ -20,51 +33,24 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /* UDPサーバの初期化 */
-    sock = init_udpserver( (in_port_t)argv[1]);
-
-    printf("server:init_udpserver\n");
-    printf("sock %d\n", sock);
-
-    // ----------ここで止まってる-----------------
+    sock = init_udpserver((in_port_t)atoi(argv[1]));
+    // UDPでは最初に作成したソケットをそのまま通信に使う
+    // listen()とaccept()は不要→どこらパケットが到着するかわからない
 
     for(;;){
         /* 文字列をクライアントから受信する */
-        printf("for\n");
         from_len = sizeof(from_adrs);
-        printf("fromlen %d\n", from_len);
 
-        // TODO:ここでとまってる
-        if((strsize=recvfrom(sock, buf, BUFSIZE, 0,
-                             (struct sockaddr *)&from_adrs, &from_len)) == -1){
-            exit_errmesg("recvfrom()");
-        }
-        printf("server:recvfrom()\n");
+        strsize = Recvfrom(sock, buf, BUFSIZE, 0,
+                 (struct sockaddr *)&from_adrs, &from_len);
+
         show_adrsinfo(&from_adrs);
 
-        /* 文字列をクライアントに送信する */
-        if(sendto(sock, buf, strsize, 0,
-                  (struct sockaddr *)&from_adrs, sizeof(from_adrs)) == -1 ){
-            exit_errmesg("sendto()");
-        }
-        printf("server:sendto()\n");
-
+        Sendto(sock, buf, strsize, 0,
+               (struct sockaddr *)&from_adrs, sizeof(from_adrs));
     }
 
     close(sock);
 
-    exit(EXIT_SUCCESS);
 }
 
-void show_adrsinfo(struct sockaddr_in *adrs_in)
-{
-    int  port_number;
-    char ip_adrs[20];
-
-    // IPアドレスの情報を文字列に変換するために、 inet_ntoa()関数を使用
-    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
-    port_number = ntohs(adrs_in->sin_port);
-
-    // IPとポートを表示する
-    printf("%s[%d]\n",ip_adrs,port_number);
-}

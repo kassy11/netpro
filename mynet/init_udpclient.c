@@ -1,6 +1,5 @@
 #include "mynet.h"
 
-// udpソケットを作成する
 int init_udpclient()
 {
     int sock;
@@ -10,10 +9,10 @@ int init_udpclient()
         exit_errmesg("socket()");
     }
 
+    printf("socket作成\n");
     return(sock);
 }
 
-// サーバの情報をsockaddr_inに格納する
 void set_sockaddr_in(struct sockaddr_in *server_adrs,
                      char *servername, in_port_t port_number )
 {
@@ -29,14 +28,4 @@ void set_sockaddr_in(struct sockaddr_in *server_adrs,
     server_adrs->sin_family = AF_INET;
     server_adrs->sin_port = htons(port_number);
     memcpy(&(server_adrs->sin_addr), server_host->h_addr, server_host->h_length);
-}
-
-void set_sockaddr_in_broadcast(struct sockaddr_in *server_adrs,
-                               in_port_t port_number )
-{
-    /* ブロードキャストアドレスの情報をsockaddr_in構造体に格納する */
-    memset(server_adrs, 0, sizeof(struct sockaddr_in));
-    server_adrs->sin_family = AF_INET;
-    server_adrs->sin_port = htons(port_number);
-    server_adrs->sin_addr.s_addr = htonl(INADDR_BROADCAST);
 }

@@ -44,16 +44,17 @@ int Sendto( int sock, const void *s_buf, size_t strsize, int flags, const struct
         exit_errmesg("sendto()");
     }
 
+    printf("sendtoおわり\n");
     return(r);
 }
 
 int Recvfrom(int sock, void *r_buf, size_t len, int flags,
-             struct sockaddr *from, socklen_t *fromlen)
-{
+             struct sockaddr *from, socklen_t *fromlen) {
     int r;
-    if((r=recvfrom(sock, r_buf, len, 0, from, fromlen))== -1){
+    if ((r = recvfrom(sock, r_buf, len, 0, from, fromlen)) == -1) {
         exit_errmesg("recvfrom()");
     }
 
-    return(r);
+    printf("recvfrom\n");
+    return (r);
 }

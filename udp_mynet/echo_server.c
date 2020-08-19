@@ -24,23 +24,31 @@ int main(int argc, char *argv[])
     sock = init_udpserver( (in_port_t)argv[1]);
 
     printf("server:init_udpserver\n");
+    printf("sock %d\n", sock);
 
     // ----------ここで止まってる-----------------
 
     for(;;){
         /* 文字列をクライアントから受信する */
+        printf("for\n");
         from_len = sizeof(from_adrs);
-        strsize = Recvfrom(sock, buf, BUFSIZE, 0,
-                           (struct sockaddr *)&from_adrs, &from_len);
+        printf("fromlen %d\n", from_len);
 
+        // TODO:ここでとまってる
+        if((strsize=recvfrom(sock, buf, BUFSIZE, 0,
+                             (struct sockaddr *)&from_adrs, &from_len)) == -1){
+            exit_errmesg("recvfrom()");
+        }
         printf("server:recvfrom()\n");
         show_adrsinfo(&from_adrs);
 
         /* 文字列をクライアントに送信する */
-        Sendto(sock, buf, strsize, 0,
-               (struct sockaddr *)&from_adrs, sizeof(from_adrs));
-
+        if(sendto(sock, buf, strsize, 0,
+                  (struct sockaddr *)&from_adrs, sizeof(from_adrs)) == -1 ){
+            exit_errmesg("sendto()");
+        }
         printf("server:sendto()\n");
+
     }
 
     close(sock);

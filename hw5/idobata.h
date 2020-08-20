@@ -27,13 +27,18 @@
 #define MESSAGE 5
 #define QUIT    6
 
-#define TIMEOUT_SEC 60
+#define TIMEOUT_SEC 5
 #define TIMEOUT_NUM 3
 #define MSGBUF_SIZE 512
 #define L_USERNAME 20
 
 #define S_BUFSIZE 512   /* 送信用バッファサイズ */
 #define R_BUFSIZE 512   /* 受信用バッファサイズ */
+
+#define SERVER_LEN 256     /* サーバ名格納用バッファサイズ */
+#define DEFAULT_PORT 50001 /* ポート番号既定値 */
+#define DEFAULT_NCLIENT 3  /* 省略時のクライアント数 */
+#define DEFAULT_MODE 'C'   /* 省略時はクライアント */
 
 // ユーザ管理用の構造体
 typedef struct _imember {
@@ -60,7 +65,7 @@ void idobata_client(char* servername, int port_number);
 u_int32_t analyze_header( char *header );
 
 /* クライアントの初期化 */
-void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs);
+int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs);
 char* create_packet(u_int32_t type, char *message );
 
 #endif //HW5_IDOBATA_H

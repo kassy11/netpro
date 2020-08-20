@@ -6,10 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define SERVER_LEN 256     /* サーバ名格納用バッファサイズ */
-#define DEFAULT_PORT 50001 /* ポート番号既定値 */
-#define DEFAULT_NCLIENT 3  /* 省略時のクライアント数 */
-#define DEFAULT_MODE 'C'   /* 省略時はクライアント */
+
 
 extern char *optarg;
 extern int optind, opterr, optopt;

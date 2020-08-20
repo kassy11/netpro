@@ -26,10 +26,13 @@ void idobata_client(char* servername, int port_number){
                   (void *)&broadcast_sw, sizeof(broadcast_sw)) == -1){
         exit_errmesg("setsockopt()");
     }
-    // heloパケットの送信
-    // udp_sockとbroadcast_adrsを引数に持つ
-    set_helo_packet(udp_sock, &broadcast_adrs);
 
+    // HELOに失敗ならしたらサーバを起動する
+    if(set_helo_packet(udp_sock, &broadcast_adrs) == -1){
+        close(udp_sock);
+        printf("他サーバから応答がなかったため、サーバとして起動します\n");
+        idobata_server(port_number, DEFAULT_NCLIENT);
+    }
     close(udp_sock);
 
    // -------------ここまでがUDPでのhelo→hereのやりとり--------------//

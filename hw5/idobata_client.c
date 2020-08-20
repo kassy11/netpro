@@ -6,14 +6,10 @@
 
 #include "mynet.h"
 #include "idobata.h"
-#include <sys/select.h>
-#include <sys/time.h>
-#include <arpa/inet.h>
 
 
-#define S_BUFSIZE 512   /* 送信用バッファサイズ */
-#define R_BUFSIZE 512   /* 受信用バッファサイズ */
-#define TIMEOUT_NUM 3
+#define MSGBUF_SIZE 512
+static char MsgBuffer[MSGBUF_SIZE];
 
 void idobata_client(char* servername, int port_number){
     struct sockaddr_in broadcast_adrs;
@@ -29,7 +25,6 @@ void idobata_client(char* servername, int port_number){
     struct timeval timeout;
 
     char udp_s_buf[S_BUFSIZE], udp_r_buf[R_BUFSIZE];
-    char tcp_s_buf[S_BUFSIZE], tcp_r_buf[R_BUFSIZE];
     int strsize;
 
 
@@ -46,64 +41,12 @@ void idobata_client(char* servername, int port_number){
         exit_errmesg("setsockopt()");
     }
 
-
-    /* ビットマスクの準備 */
-    FD_ZERO(&mask);
-    FD_SET(udp_sock, &mask);
-
-    // HELOパケットを作成して送信する
-    // タイム・アウトしたらTIMEOUT_NUM回送信し直す
-
-    // TODO: サーバから一定時間返事がなかったら、とはなっていない？？
-    for(;;){
-        if(timeout_count>=3){
-            break;
-        }
-
-        // HELOパケットを作成する
-        strcpy(udp_s_buf, HERE_PACKET);
-        strsize = strlen(udp_s_buf);
-        udp_s_buf[strsize] = '\0';
-
-        create_packet(HELO, "");
-
-        /* HELOパケットををサーバに送信する */
-        Sendto(udp_sock, udp_s_buf, strsize, 0,
-               (struct sockaddr *)&broadcast_adrs, sizeof(broadcast_adrs) );
-
-        /* 受信データの有無をチェック */
-        readfds = mask;
-        timeout.tv_sec = TIMEOUT_SEC;
-        timeout.tv_usec = 0;
-
-        // select()を用いてタイムアウト処理を行っている
-        // selectから戻ってきた時,timeoutには残り時間が入ってる
-        // →selectで変更されるので毎回初期化が必要
-        if( select( udp_sock+1, &readfds, NULL, NULL, &timeout)==0 ){
-            printf("Time out.\n");
-            break;
-        }
-
-        from_len = sizeof(from_adrs);
-        strsize = Recvfrom(udp_sock, udp_r_buf, R_BUFSIZE-1, 0,
-                           (struct sockaddr *)&from_adrs, &from_len);
-        udp_r_buf[strsize] = '\0';
-
-        if(strncmp(udp_r_buf, HERE_PACKET, 4)==0){
-            // 受信した「HERE」パケットからサーバのIPアドレスを得る→どこかに保存する？？
-            printf("[%s] %s",inet_ntoa(from_adrs.sin_addr), udp_r_buf);
-            break;
-        }else{
-            timeout_count++;
-        }
-
-    };
-
-    close(udp_sock);             /* ソケットを閉じる */
-    // TODO: 関数に切り出す（set_heloみたいな）
+    // heloパケットの送信
+    set_helo_packet(udp_sock);
+    close(udp_sock);
 
     // ここからがTCPでのメッセージのやりとり
-
+    char tcp_s_buf[S_BUFSIZE], tcp_r_buf[R_BUFSIZE];
     int tcp_sock;
     // TODO:ここのport_numberは上のやり取りで得たものに変える？？
     tcp_sock = init_tcpclient(servername, port_number);

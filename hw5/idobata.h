@@ -7,6 +7,10 @@
 
 #include "mynet.h"
 
+#include <sys/select.h>
+#include <sys/time.h>
+#include <arpa/inet.h>
+
 // パケットの定義
 #define HELO_PACKET "HELO"
 #define HERE_PACKET "HERE"
@@ -23,10 +27,13 @@
 #define MESSAGE 5
 #define QUIT    6
 
-
 #define TIMEOUT_SEC 60
+#define TIMEOUT_NUM 3
 
 #define L_USERNAME 20
+
+#define S_BUFSIZE 512   /* 送信用バッファサイズ */
+#define R_BUFSIZE 512   /* 受信用バッファサイズ */
 
 // ユーザ管理用の構造体
 typedef struct _imember {
@@ -52,8 +59,7 @@ void idobata_client(char* servername, int port_number);
 
 /* クライアントの初期化 */
 void init_client(int sock_listen, int n_client);
-
-
-void create_packet(u_int32_t type, char *message );
+void set_helo_packet();
+char* create_packet(u_int32_t type, char *message );
 
 #endif //HW5_IDOBATA_H

@@ -1,6 +1,8 @@
+// 起動時プログラム
 // サーバかクライアントかを選択する
 
 #include "mynet.h"
+#include "idobata.h"
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -62,6 +64,11 @@ int main(int argc, char *argv[])
             idobata_server(port_number, num_client);
             break;
         case 'C':
+
+            // TODO:以下はサバーと同じポートにしないっていう要件を満たしていない
+            if(port_number == DEFAULT_PORT){
+                exit_errmesg("Do not set same port with Server\n");
+            }
             idobata_client(servername, port_number);
             break;
 

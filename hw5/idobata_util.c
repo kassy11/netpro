@@ -83,6 +83,7 @@ void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
         // HELOパケットを作成する
         strcpy(udp_s_buf, create_packet(HELO, ""));
         printf("%s", udp_s_buf);
+        strsize = strlen(udp_s_buf);
 
         /* HELOパケットをブロードキャストでサーバに送信する */
         Sendto(udp_sock, udp_s_buf, strsize, 0,

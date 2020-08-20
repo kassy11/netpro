@@ -57,6 +57,8 @@ void idobata_server(int port_number, int n_client);
 /* クライアントメインルーチン */
 void idobata_client(char* servername, int port_number);
 
+u_int32_t analyze_header( char *header );
+
 /* クライアントの初期化 */
 void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs);
 char* create_packet(u_int32_t type, char *message );

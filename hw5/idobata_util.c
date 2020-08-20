@@ -51,16 +51,14 @@ char* create_packet(u_int32_t type, char *message ){
 }
 
 // 成功したら１を失敗したら−１を返す→本体で受け取って失敗ならサーバ起動する
-void set_helo_packet(int udp_sock){
+void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
 
-    struct sockaddr_in broadcast_adrs;
     struct sockaddr_in from_adrs;
     socklen_t from_len;
 
     int timeout_count = 0;
 
     // setsockoptに設定するブロードキャストのための変数
-    int broadcast_sw=1;
     fd_set mask, readfds;
     struct timeval timeout;
 
@@ -76,23 +74,26 @@ void set_helo_packet(int udp_sock){
     // TODO: サーバから一定時間返事がなかったら、とはなっていない？？
     // TODO:連続してサーバーを送るようになってるので時間を空けて送るように修正
     // TODO:HEREが返ってくるまでHELOを送る、っていう条件がない
+
+    printf("set_helo_packetのfor文直前\n");
     for(;;){
         if(timeout_count>=3){
             break;
         }
-
         // HELOパケットを作成する
         strcpy(udp_s_buf, create_packet(HELO, ""));
         printf("%s", udp_s_buf);
 
         /* HELOパケットをブロードキャストでサーバに送信する */
         Sendto(udp_sock, udp_s_buf, strsize, 0,
-               (struct sockaddr *)&broadcast_adrs, sizeof(broadcast_adrs) );
+               (struct sockaddr *)broadcast_adrs, sizeof(*broadcast_adrs) );
 
         /* 受信データの有無をチェック */
         readfds = mask;
         timeout.tv_sec = TIMEOUT_SEC;
         timeout.tv_usec = 0;
+
+        printf("sendto\n");
 
         if( select( udp_sock+1, &readfds, NULL, NULL, &timeout)==0 ){
             printf("Time out.\n");
@@ -114,5 +115,4 @@ void set_helo_packet(int udp_sock){
         }
 
     };
-    close(udp_sock);             /* ソケットを閉じる */
 }

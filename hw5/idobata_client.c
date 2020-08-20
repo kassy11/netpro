@@ -8,25 +8,11 @@
 #include "idobata.h"
 
 
-#define MSGBUF_SIZE 512
-static char MsgBuffer[MSGBUF_SIZE];
 
 void idobata_client(char* servername, int port_number){
     struct sockaddr_in broadcast_adrs;
-    struct sockaddr_in from_adrs;
-    socklen_t from_len;
-
     int udp_sock;
-    int timeout_count = 0;
-
-    // setsockoptに設定するブロードキャストのための変数
     int broadcast_sw=1;
-    fd_set mask, readfds;
-    struct timeval timeout;
-
-    char udp_s_buf[S_BUFSIZE], udp_r_buf[R_BUFSIZE];
-    int strsize;
-
 
     /* ブロードキャストアドレスの情報をsockaddr_in構造体に格納する */
     set_sockaddr_in_broadcast(&broadcast_adrs, (in_port_t)port_number);
@@ -40,10 +26,17 @@ void idobata_client(char* servername, int port_number){
                   (void *)&broadcast_sw, sizeof(broadcast_sw)) == -1){
         exit_errmesg("setsockopt()");
     }
-
     // heloパケットの送信
-    set_helo_packet(udp_sock);
+    // udp_sockとbroadcast_adrsを引数に持つ
+    set_helo_packet(udp_sock, &broadcast_adrs);
+
     close(udp_sock);
+
+   // -------------ここまでがUDPでのhelo→hereのやりとり--------------//
+
+   printf("tcpスタート\n");
+   fd_set mask, readfds;
+    int strsize;
 
     // ここからがTCPでのメッセージのやりとり
     char tcp_s_buf[S_BUFSIZE], tcp_r_buf[R_BUFSIZE];

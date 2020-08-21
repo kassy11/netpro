@@ -100,7 +100,9 @@ struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_a
         if(strncmp(udp_r_buf, HERE_PACKET, 4)==0){
             // 受信した「HERE」パケットからサーバのIPアドレスを得る→どこかに保存する？？
             // from_adrsをリターンする必要がある
-            printf("[%s:%hu] %s\n",inet_ntoa(from_adrs.sin_addr), from_adrs.sin_port, udp_r_buf);
+            printf("%sパケットを受信しました\n", udp_r_buf);
+            printf("サーバ情報:\n");
+            show_adrsinfo(&from_adrs);
             break;
         }else{
             // HEREパケット以外が届いた時
@@ -137,19 +139,35 @@ void set_here_packet(int port_number){
         /* 文字列をクライアントから受信する */
         from_len = sizeof(from_adrs);
 
-        strsize = Recvfrom(sock, r_buf, R_BUFSIZE, 0,
+        Recvfrom(sock, r_buf, R_BUFSIZE, 0,
                            (struct sockaddr *)&from_adrs, &from_len);
 
+        printf("クライアント情報： \n");
         show_adrsinfo(&from_adrs);
 
         if(strcmp(r_buf, HERE_PACKET)){
             strcpy(r_buf, create_packet(HERE, ""));
-            printf("%s", r_buf);
+            printf("%sパケットを送信しました\n", r_buf);
             strsize = strlen(r_buf);
             Sendto(sock, r_buf, strsize, 0,
                    (struct sockaddr *)&from_adrs, sizeof(from_adrs));
+            break;
         }
 
     }
+    // HEREを送信したらUDPソケットはcloseする
     close(sock);
+}
+
+
+
+// 文字列の改行を取り除く
+static char *chop_nl(char *s)
+{
+    int len;
+    len = strlen(s);
+    if( s[len-1] == '\n' ){
+        s[len-1] = '\0';
+    }
+    return(s);
 }

@@ -15,12 +15,6 @@ u_int32_t analyze_header( char *header )
     return 0;
 }
 
-/*
-  パケットの種類=type のパケットを作成する
-  パケットのデータは 内部的なバッファ(Buffer)に作成される
-*/
-// snprintf を用いてパケットを作成する
-
 // TODO: ヒントだとvoidで返してるけど、char*で返す？？
 char* create_packet(u_int32_t type, char *message ){
 
@@ -51,7 +45,7 @@ char* create_packet(u_int32_t type, char *message ){
 }
 
 // 成功したら１を失敗したら−１を返す→本体で受け取って失敗ならサーバ起動する
-int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
+struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_num){
 
     struct sockaddr_in from_adrs;
     socklen_t from_len;
@@ -69,21 +63,16 @@ int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
     FD_ZERO(&mask);
     FD_SET(udp_sock, &mask);
 
-    // HELOパケットを作成して送信する
-    // タイム・アウトしたらTIMEOUT_NUM回送信し直す
-    // TODO: サーバから一定時間返事がなかったら、とはなっていない？？
-    // TODO:連続してサーバーを送るようになってるので時間を空けて送るように修正
-    // TODO:HEREが返ってくるまでHELOを送る、っていう条件がない
-
-    printf("set_helo_packetのfor文直前\n");
     for(;;){
-        if(timeout_count==3){
-            return -1;
+        if(timeout_count==TIMEOUT_NUM){
+            close(udp_sock);
+            printf("他サーバから応答がなかったため、サーバとして起動します\n");
+            idobata_server(port_num, DEFAULT_NCLIENT);
             break;
         }
         // HELOパケットを作成する
         strcpy(udp_s_buf, create_packet(HELO, ""));
-        printf("%s", udp_s_buf);
+        printf("%s\n", udp_s_buf);
         strsize = strlen(udp_s_buf);
 
         /* HELOパケットをブロードキャストでサーバに送信する */
@@ -95,7 +84,6 @@ int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
         timeout.tv_sec = TIMEOUT_SEC;
         timeout.tv_usec = 0;
 
-        printf("sendto\n");
 
         if( select( udp_sock+1, &readfds, NULL, NULL, &timeout)==0 ){
             timeout_count++;
@@ -108,17 +96,60 @@ int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs){
                            (struct sockaddr *)&from_adrs, &from_len);
         udp_r_buf[strsize] = '\0';
 
-        printf("%d", strsize);
-
         // サーバからHEREパケットが返ってきたとき
         if(strncmp(udp_r_buf, HERE_PACKET, 4)==0){
             // 受信した「HERE」パケットからサーバのIPアドレスを得る→どこかに保存する？？
-            printf("[%s] %s\n",inet_ntoa(from_adrs.sin_addr), udp_r_buf);
+            // from_adrsをリターンする必要がある
+            printf("[%s:%hu] %s\n",inet_ntoa(from_adrs.sin_addr), from_adrs.sin_port, udp_r_buf);
             break;
         }else{
             // HEREパケット以外が届いた時
             timeout_count++;
         }
     }
-    return 0;
+    return from_adrs;
+}
+
+void show_adrsinfo(struct sockaddr_in *adrs_in)
+{
+    int  port_number;
+    char ip_adrs[20];
+
+    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
+    port_number = ntohs(adrs_in->sin_port);
+
+    printf("IPアドレス:ポート番号 [%s:%d]\n",ip_adrs,port_number);
+}
+
+
+void set_here_packet(int port_number){
+    struct sockaddr_in from_adrs;
+
+    int sock;
+    socklen_t from_len;
+
+    char r_buf[R_BUFSIZE];
+    int strsize;
+
+    sock = init_udpserver((in_port_t)port_number);
+
+    for(;;){
+        /* 文字列をクライアントから受信する */
+        from_len = sizeof(from_adrs);
+
+        strsize = Recvfrom(sock, r_buf, R_BUFSIZE, 0,
+                           (struct sockaddr *)&from_adrs, &from_len);
+
+        show_adrsinfo(&from_adrs);
+
+        if(strcmp(r_buf, HERE_PACKET)){
+            strcpy(r_buf, create_packet(HERE, ""));
+            printf("%s", r_buf);
+            strsize = strlen(r_buf);
+            Sendto(sock, r_buf, strsize, 0,
+                   (struct sockaddr *)&from_adrs, sizeof(from_adrs));
+        }
+
+    }
+    close(sock);
 }

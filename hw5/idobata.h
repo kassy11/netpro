@@ -27,7 +27,7 @@
 #define MESSAGE 5
 #define QUIT    6
 
-#define TIMEOUT_SEC 5
+#define TIMEOUT_SEC 3
 #define TIMEOUT_NUM 3
 #define MSGBUF_SIZE 512
 #define L_USERNAME 20
@@ -63,9 +63,10 @@ void idobata_server(int port_number, int n_client);
 void idobata_client(char* servername, int port_number);
 
 u_int32_t analyze_header( char *header );
-
+void show_adrsinfo(struct sockaddr_in *adrs_in);
+void set_here_packet(int port_number);
 /* クライアントの初期化 */
-int set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs);
+struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
 char* create_packet(u_int32_t type, char *message );
 
 #endif //HW5_IDOBATA_H

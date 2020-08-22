@@ -14,8 +14,6 @@ int main()
     /* サーバに接続する */
     sock = init_tcpclient("localhost", 50000 ) ; /* ←ライブラリの関数を使った */
 
-    /* キーボードから文字列を入力する */
-    ;
 
     fgets(s_buf, S_BUFSIZE, stdin);
     strsize = strlen(s_buf);

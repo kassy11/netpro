@@ -26,14 +26,13 @@ int main(int argc, char *argv[])
     char s_buf[S_BUFSIZE], r_buf[R_BUFSIZE];
     int strsize;
 
-    /* 引数のチェックと使用法の表示 */
-    if( argc != 2 ){
+    if( argc != 3 ){
         fprintf(stderr,"Usage: %s broadcast_address Port_number\n", argv[0]);
         exit(1);
     }
 
     /* ブロードキャストアドレスの情報をsockaddr_in構造体に格納する */
-    set_sockaddr_in_broadcast(&broadcast_adrs, (in_port_t)atoi(argv[1]));
+    set_sockaddr_in(&broadcast_adrs, argv[1], (in_port_t)atoi(argv[2]));
 
     /* ソケットをDGRAMモードで作成する */
     sock = init_udpclient();

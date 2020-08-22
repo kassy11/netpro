@@ -2,7 +2,16 @@
 #include "idobata.h"
 
 #define MSGBUF_SIZE 512
+#define NAMELENGTH 20
+static int N_client;         /* クライアントの数 */
+static int Max_sd;               /* ディスクリプタ最大値 */
+
+
 static char Buffer[MSGBUF_SIZE];
+// imemberはユーザ構造体へのポインタ型
+static imember Member;
+static int client_join(int sock_listen);
+static char *chop_nl(char *s);
 
 u_int32_t analyze_header( char *header )
 {
@@ -159,6 +168,89 @@ void set_here_packet(int port_number){
     close(sock);
 }
 
+// 各クライアントとのaccept()処理
+void init_client(int sock_listen, int n_client)
+{
+    N_client = n_client;
+
+    /* クライアント情報の保存用構造体の初期化 */
+    // Memberはユーザ構造体へのポインタ型
+    if((Member=(imember*)malloc(N_client*sizeof(imember*)))==NULL ){
+        exit_errmesg("malloc()");
+    }
+
+    // TODO:配列ではなくって線形リストでユーザを確保するべき？
+
+    /* クライアントのログイン処理 */
+    // selectで使うために、受け付けたソケット番号の最大値を受け取る
+    Max_sd = client_join(sock_listen);
+}
+
+// それらのクライアント情報を Client[]構造体配列に格納する
+static int client_join(int sock_listen) {
+    int client_id, sock_accepted;
+    static char prompt[] = "Input your name: ";
+    char loginname[NAMELENGTH];
+    int strsize;
+
+    // 全クライアントのログイン処理
+    for (client_id = 0; client_id < N_client; client_id++) {
+        /* クライアントの接続を受け付ける */
+        sock_accepted = Accept(sock_listen, NULL, NULL);
+        printf("Client[%d] connected.\n", client_id);
+
+        /* ログインプロンプトを送信 */
+        Send(sock_accepted, prompt, strlen(prompt), 0);
+
+        /* ログイン名を受信 */
+        strsize = Recv(sock_accepted, loginname, NAMELENGTH - 1, 0);
+        loginname[strsize] = '\0';
+        chop_nl(loginname);
+
+        /* ユーザ情報を保存 */
+        Member[client_id].sock = sock_accepted;
+        strncpy(Member[client_id].name, loginname, NAMELENGTH);
+        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id, Client[client_id].name);
+    }
+
+    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
+    return (sock_accepted);
+}
+
+int validate_packet(char *tcp_buf, buf_type type){
+    char *check;
+    char buf[R_BUFSIZE];
+    strcpy(buf, tcp_buf);
+    check = strtok(buf, " ");
+
+    switch (type) {
+        case Client_recv:
+            // クライアントが受け取るのはMESGパケットのみ
+            if(!strcmp(check, MESG_PACKET)){
+                return -1;
+            }
+            break;
+        case Client_send:
+            // ログイン済みクライアントが送れるはQUITとPOSTのみ
+            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
+                return -1;
+            }
+            break;
+        case Server_send:
+            // サーバが送信するのはMESGパケットのみ
+            if(!strcmp(check, MESG_PACKET)){
+                return -1;
+            }
+            break;
+        case Server_recv:
+            // サーバがログイン済みクライアントから受信するのはQUIT,POSTのみ
+            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
+                return -1;
+            }
+            break;
+    }
+    return 0;
+}
 
 
 // 文字列の改行を取り除く

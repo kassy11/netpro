@@ -27,6 +27,14 @@
 #define MESSAGE 5
 #define QUIT    6
 
+typedef enum {
+    Client_send,
+    Client_recv,
+    Server_send,
+    Server_recv
+}buf_type;
+
+
 #define TIMEOUT_SEC 3
 #define TIMEOUT_NUM 3
 #define MSGBUF_SIZE 512
@@ -35,12 +43,14 @@
 #define S_BUFSIZE 512   /* 送信用バッファサイズ */
 #define R_BUFSIZE 512   /* 受信用バッファサイズ */
 
+
 #define SERVER_LEN 256     /* サーバ名格納用バッファサイズ */
 #define DEFAULT_PORT 50001 /* ポート番号既定値 */
 #define DEFAULT_NCLIENT 3  /* 省略時のクライアント数 */
 #define DEFAULT_MODE 'C'   /* 省略時はクライアント */
 
-// ユーザ管理用の構造体
+// ユーザ管理用の構造体、線形リストで管理する
+// imember は、struct _imember に対する ポインタとして typedef
 typedef struct _imember {
     char username[L_USERNAME];     /* ユーザ名 */
     int  sock;                     /* ソケット番号 */
@@ -68,5 +78,7 @@ void set_here_packet(int port_number);
 /* クライアントの初期化 */
 struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
 char* create_packet(u_int32_t type, char *message );
+void init_client(int sock_listen, int n_client);
+int validate_packet(char *buf, buf_type type);
 
 #endif //HW5_IDOBATA_H

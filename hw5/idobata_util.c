@@ -52,7 +52,7 @@ char* create_packet(u_int32_t type, char *message ){
 }
 
 // 成功したら１を失敗したら−１を返す→本体で受け取って失敗ならサーバ起動する
-struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_num){
+void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_num){
 
     struct sockaddr_in from_adrs;
     socklen_t from_len;
@@ -116,18 +116,6 @@ struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_a
             timeout_count++;
         }
     }
-    return from_adrs;
-}
-
-void show_adrsinfo(struct sockaddr_in *adrs_in)
-{
-    int  port_number;
-    char ip_adrs[20];
-
-    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
-    port_number = ntohs(adrs_in->sin_port);
-
-    printf("IPアドレス:ポート番号 [%s:%d]\n",ip_adrs,port_number);
 }
 
 
@@ -151,8 +139,9 @@ void set_here_packet(int port_number){
 
         printf("クライアント情報： \n");
         show_adrsinfo(&from_adrs);
+        printf("%sパケットを受信しました\n", r_buf);
 
-        if(strcmp(r_buf, HELO_PACKET)){
+        if(strncmp(r_buf, HELO_PACKET, 4) == 0){
             strcpy(s_buf, create_packet(HERE, ""));
             printf("%sパケットを送信しました\n", s_buf);
             strsize = strlen(s_buf);
@@ -167,52 +156,52 @@ void set_here_packet(int port_number){
 }
 
 // 各クライアントとのaccept()処理
-void init_client(int sock_listen, int n_client)
-{
-    N_client = n_client;
-
-    /* クライアント情報の保存用構造体の初期化 */
-    // Memberはユーザ構造体へのポインタ型
-    if((Member=(imember*)malloc(N_client*sizeof(imember*)))==NULL ){
-        exit_errmesg("malloc()");
-    }
-
-    // TODO:配列ではなくって線形リストでユーザを確保するべき？
-
-    // selectで使うために、受け付けたソケット番号の最大値を受け取る
-    Max_sd = client_join(sock_listen);
-}
+//void init_client(int sock_listen, int n_client)
+//{
+//    N_client = n_client;
+//
+//    /* クライアント情報の保存用構造体の初期化 */
+//    // Memberはユーザ構造体へのポインタ型
+//    if((Member=(imember*)malloc(N_client*sizeof(imember*)))==NULL ){
+//        exit_errmesg("malloc()");
+//    }
+//
+//    // TODO:配列ではなくって線形リストでユーザを確保するべき？
+//
+//    // selectで使うために、受け付けたソケット番号の最大値を受け取る
+//    Max_sd = client_join(sock_listen);
+//}
 
 // サーバにJOINパケットを送信する
-static int client_join(int sock_listen) {
-    int client_id, sock_accepted;
-    static char prompt[] = "Input your name: ";
-    char loginname[NAMELENGTH];
-    int strsize;
-
-    // 全クライアントのログイン処理
-    for (client_id = 0; client_id < N_client; client_id++) {
-        /* クライアントの接続を受け付ける */
-        sock_accepted = Accept(sock_listen, NULL, NULL);
-        printf("Client[%d] connected.\n", client_id);
-
-        /* ログインプロンプトを送信 */
-        Send(sock_accepted, prompt, strlen(prompt), 0);
-
-        /* ログイン名を受信 */
-        strsize = Recv(sock_accepted, loginname, NAMELENGTH - 1, 0);
-        loginname[strsize] = '\0';
-        chop_nl(loginname);
-
-        /* ユーザ情報を保存 */
-        Member[client_id].sock = sock_accepted;
-        strncpy(Member[client_id].name, loginname, NAMELENGTH);
-        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id, Client[client_id].name);
-    }
-
-    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
-    return (sock_accepted);
-}
+//static int client_join(int sock_listen) {
+//    int client_id, sock_accepted;
+//    static char prompt[] = "Input your name: ";
+//    char loginname[NAMELENGTH];
+//    int strsize;
+//
+//    // 全クライアントのログイン処理
+//    for (client_id = 0; client_id < N_client; client_id++) {
+//        /* クライアントの接続を受け付ける */
+//        sock_accepted = Accept(sock_listen, NULL, NULL);
+//        printf("Client[%d] connected.\n", client_id);
+//
+//        /* ログインプロンプトを送信 */
+//        Send(sock_accepted, prompt, strlen(prompt), 0);
+//
+//        /* ログイン名を受信 */
+//        strsize = Recv(sock_accepted, loginname, NAMELENGTH - 1, 0);
+//        loginname[strsize] = '\0';
+//        chop_nl(loginname);
+//
+//        /* ユーザ情報を保存 */
+//        Member[client_id].sock = sock_accepted;
+//        strncpy(Member[client_id].name, loginname, NAMELENGTH);
+//        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id, Client[client_id].name);
+//    }
+//
+//    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
+//    return (sock_accepted);
+//}
 
 int validate_packet(char *tcp_buf, buf_type type){
     char *check;
@@ -247,6 +236,17 @@ int validate_packet(char *tcp_buf, buf_type type){
             break;
     }
     return 0;
+}
+
+void show_adrsinfo(struct sockaddr_in *adrs_in)
+{
+    int  port_number;
+    char ip_adrs[20];
+
+    strncpy(ip_adrs, inet_ntoa(adrs_in->sin_addr), 20);
+    port_number = ntohs(adrs_in->sin_port);
+
+    printf("IPアドレス:ポート番号 [%s:%d]\n",ip_adrs,port_number);
 }
 
 

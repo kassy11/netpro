@@ -83,10 +83,10 @@ void idobata_client(char* servername, int port_number);
 u_int32_t analyze_header( char *header );
 void show_adrsinfo(struct sockaddr_in *adrs_in);
 void set_here_packet(int port_number);
+void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
 /* クライアントの初期化 */
-struct sockaddr_in set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
 char* create_packet(u_int32_t type, char *message );
-void init_client(int sock_listen, int n_client);
+//void init_client(int sock_listen, int n_client);
 int validate_packet(char *buf, buf_type type);
 
 #endif //HW5_IDOBATA_H

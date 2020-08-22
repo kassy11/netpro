@@ -15,10 +15,10 @@ void idobata_server(int port_number, int n_client){
     /* サーバの初期化 */
     sock_listen = init_tcpserver(port_number, 5);
 
-    // TODO:acceptの処理はinit_clientでまとめる？
-    init_client(sock_listen, n_client);
-
-    close(sock_listen);
+//    // TODO:acceptの処理はinit_clientでまとめる？
+//    init_client(sock_listen, n_client);
+//
+//    close(sock_listen);
 
     // 井戸端会議のメイン処理
 

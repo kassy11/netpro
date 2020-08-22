@@ -23,17 +23,15 @@ void idobata_client(char* servername, int port_number){
         exit_errmesg("setsockopt()");
     }
 
-    // HELOに失敗ならしたらサーバを起動する
-    server_adrs = set_helo_packet(udp_sock, &broadcast_adrs, port_number);
+    set_helo_packet(udp_sock, &broadcast_adrs, port_number);
     close(udp_sock);
 
-    printf("クライアントとして起動しました\n");
 
     // ここからがTCPでのメッセージのやりとり
     char tcp_s_buf[S_BUFSIZE], tcp_r_buf[R_BUFSIZE];
     int tcp_sock;
-    struct sockaddr_in host_adrs;
     tcp_sock = init_tcpclient(servername, port_number);
+    printf("TCPクライアントとして起動しました\n");
 
     fd_set mask, readfds;
     int strsize;

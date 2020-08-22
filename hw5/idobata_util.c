@@ -7,7 +7,9 @@ static int N_client;         /* クライアントの数 */
 static int Max_sd;               /* ディスクリプタ最大値 */
 static char Buffer[MSGBUF_SIZE];
 // imemberはユーザ構造体へのポインタ型
+// TODO:ここの定義合ってる？？
 static imember Member;
+// static client_info *Client;  /* クライアントの情報 */
 static int client_join(int sock_listen);
 static char *chop_nl(char *s);
 
@@ -155,53 +157,51 @@ void set_here_packet(int port_number){
     close(sock);
 }
 
-// 各クライアントとのaccept()処理
-//void init_client(int sock_listen, int n_client)
-//{
-//    N_client = n_client;
-//
-//    /* クライアント情報の保存用構造体の初期化 */
-//    // Memberはユーザ構造体へのポインタ型
-//    if((Member=(imember*)malloc(N_client*sizeof(imember*)))==NULL ){
-//        exit_errmesg("malloc()");
-//    }
-//
-//    // TODO:配列ではなくって線形リストでユーザを確保するべき？
-//
-//    // selectで使うために、受け付けたソケット番号の最大値を受け取る
-//    Max_sd = client_join(sock_listen);
-//}
+ //各クライアントとのaccept()処理
+void init_client(int sock_listen, int n_client)
+{
+    N_client = n_client;
 
-// サーバにJOINパケットを送信する
-//static int client_join(int sock_listen) {
-//    int client_id, sock_accepted;
-//    static char prompt[] = "Input your name: ";
-//    char loginname[NAMELENGTH];
-//    int strsize;
-//
-//    // 全クライアントのログイン処理
-//    for (client_id = 0; client_id < N_client; client_id++) {
-//        /* クライアントの接続を受け付ける */
-//        sock_accepted = Accept(sock_listen, NULL, NULL);
-//        printf("Client[%d] connected.\n", client_id);
-//
-//        /* ログインプロンプトを送信 */
-//        Send(sock_accepted, prompt, strlen(prompt), 0);
-//
-//        /* ログイン名を受信 */
-//        strsize = Recv(sock_accepted, loginname, NAMELENGTH - 1, 0);
-//        loginname[strsize] = '\0';
-//        chop_nl(loginname);
-//
-//        /* ユーザ情報を保存 */
-//        Member[client_id].sock = sock_accepted;
-//        strncpy(Member[client_id].name, loginname, NAMELENGTH);
-//        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Client[client_id].sock, client_id, Client[client_id].name);
-//    }
-//
-//    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
-//    return (sock_accepted);
-//}
+    /* クライアント情報の保存用構造体の初期化 */
+    // Memberはユーザ構造体へのポインタ型
+    // TODO: ここの定義合ってる？？
+    if((Member=(imember)malloc(N_client*sizeof(struct _imember)))==NULL ){
+        exit_errmesg("malloc()");
+    }
+
+    // selectで使うために、受け付けたソケット番号の最大値を受け取る
+    Max_sd = client_join(sock_listen);
+}
+
+ // JOINパケットをrecvしてユーザ構造体に情報を格納する
+ // TODO: analyze_headerを使うように変更
+static int client_join(int sock_listen) {
+    int client_id, sock_accepted;
+    char join_packet[R_BUFSIZE];
+    char loginname[NAMELENGTH];
+    int strsize;
+
+    // 全クライアントのログイン処理
+    for (client_id = 0; client_id < N_client; client_id++) {
+        /* クライアントの接続を受け付ける */
+        sock_accepted = Accept(sock_listen, NULL, NULL);
+        printf("Client[%d] connected.\n", client_id);
+
+        // JOINパケットを受信
+        strsize = Recv(sock_accepted, join_packet, R_BUFSIZE - 1, 0);
+
+        // analyzeしてユーザ名を切り出す＆ヘッダーがJOINであることを確かめる
+
+
+        /* ユーザ情報を保存 */
+        Member[client_id].sock = sock_accepted;
+        strncpy(Member[client_id].username, loginname, NAMELENGTH);
+        printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Member[client_id].sock, client_id, Member[client_id].username);
+    }
+
+    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
+    return (sock_accepted);
+}
 
 int validate_packet(char *tcp_buf, buf_type type){
     char *check;

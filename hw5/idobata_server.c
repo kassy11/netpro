@@ -11,14 +11,15 @@ void idobata_server(int port_number, int n_client){
     printf("HELO→HEREのやりとり完了\n");
 
     // TCPポート(デフォルト50001番)を監視し、クライアントからの接続を待ち受ける
-    int sock_listen, sock_accepted;
+    int sock_listen;
     /* サーバの初期化 */
     sock_listen = init_tcpserver(port_number, 5);
+    printf("TCPサーバの初期化\n");
 
 //    // TODO:acceptの処理はinit_clientでまとめる？
-//    init_client(sock_listen, n_client);
-//
-//    close(sock_listen);
+    init_client(sock_listen, n_client);
+
+    close(sock_listen);
 
     // 井戸端会議のメイン処理
 

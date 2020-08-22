@@ -47,6 +47,7 @@ void idobata_client(char* servername, int port_number){
 
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
 
+            // TODO: validate_packetをanalayze形式になおす
             if(validate_packet(tcp_s_buf, Client_send)==-1){
                 printf("Client send: invalid packet\n");
                 continue;
@@ -63,6 +64,7 @@ void idobata_client(char* servername, int port_number){
             /* サーバから文字列を受信する */
             strsize = Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
 
+            // TODO:analyzeでできるようにする
             if(validate_packet(tcp_r_buf, Client_recv)==-1){
                 printf("Client recv: invalid packet\n");
                 continue;

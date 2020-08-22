@@ -86,7 +86,7 @@ void set_here_packet(int port_number);
 void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
 /* クライアントの初期化 */
 char* create_packet(u_int32_t type, char *message );
-//void init_client(int sock_listen, int n_client);
+void init_client(int sock_listen, int n_client);
 int validate_packet(char *buf, buf_type type);
 
 #endif //HW5_IDOBATA_H

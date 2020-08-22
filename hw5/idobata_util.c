@@ -5,8 +5,6 @@
 #define NAMELENGTH 20
 static int N_client;         /* クライアントの数 */
 static int Max_sd;               /* ディスクリプタ最大値 */
-
-
 static char Buffer[MSGBUF_SIZE];
 // imemberはユーザ構造体へのポインタ型
 static imember Member;
@@ -139,7 +137,7 @@ void set_here_packet(int port_number){
     int sock;
     socklen_t from_len;
 
-    char r_buf[R_BUFSIZE];
+    char r_buf[R_BUFSIZE], s_buf[S_BUFSIZE];
     int strsize;
 
     sock = init_udpserver((in_port_t)port_number);
@@ -154,11 +152,11 @@ void set_here_packet(int port_number){
         printf("クライアント情報： \n");
         show_adrsinfo(&from_adrs);
 
-        if(strcmp(r_buf, HERE_PACKET)){
-            strcpy(r_buf, create_packet(HERE, ""));
-            printf("%sパケットを送信しました\n", r_buf);
-            strsize = strlen(r_buf);
-            Sendto(sock, r_buf, strsize, 0,
+        if(strcmp(r_buf, HELO_PACKET)){
+            strcpy(s_buf, create_packet(HERE, ""));
+            printf("%sパケットを送信しました\n", s_buf);
+            strsize = strlen(s_buf);
+            Sendto(sock, s_buf, strsize, 0,
                    (struct sockaddr *)&from_adrs, sizeof(from_adrs));
             break;
         }
@@ -181,12 +179,11 @@ void init_client(int sock_listen, int n_client)
 
     // TODO:配列ではなくって線形リストでユーザを確保するべき？
 
-    /* クライアントのログイン処理 */
     // selectで使うために、受け付けたソケット番号の最大値を受け取る
     Max_sd = client_join(sock_listen);
 }
 
-// それらのクライアント情報を Client[]構造体配列に格納する
+// サーバにJOINパケットを送信する
 static int client_join(int sock_listen) {
     int client_id, sock_accepted;
     static char prompt[] = "Input your name: ";

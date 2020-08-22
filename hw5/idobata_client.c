@@ -34,26 +34,6 @@ void idobata_client(char* servername, int port_number){
     int tcp_sock;
     struct sockaddr_in host_adrs;
     tcp_sock = init_tcpclient(servername, port_number);
-//
-//    /* サーバの情報をsockaddr_in構造体に格納する */
-//    memset(&host_adrs, 0, sizeof(server_adrs));
-//    host_adrs.sin_family = AF_INET;
-//    host_adrs.sin_port = htons(server_adrs.sin_port);
-//    host_adrs.sin_addr = server_adrs.sin_addr;
-//
-//    /* ソケットをSTREAMモードで作成する */
-//    if((tcp_sock = socket(PF_INET, SOCK_STREAM, 0)) == -1){
-//        exit_errmesg("socket()");
-//    }
-//
-//    show_adrsinfo(&host_adrs);
-//
-//    // TODO:connectでつまる
-//    /* ソケットにサーバの情報を対応づけてサーバに接続する */
-//    if(connect( tcp_sock, (struct sockaddr *)&host_adrs, sizeof(host_adrs) )== -1){
-//        exit_errmesg("connect()");
-//    }
-
 
     fd_set mask, readfds;
     int strsize;
@@ -70,7 +50,7 @@ void idobata_client(char* servername, int port_number){
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
 
             if(validate_packet(tcp_s_buf, Client_send)==-1){
-                printf("invalid packet\n");
+                printf("Client send: invalid packet\n");
                 continue;
             }
 
@@ -86,7 +66,7 @@ void idobata_client(char* servername, int port_number){
             strsize = Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
 
             if(validate_packet(tcp_r_buf, Client_recv)==-1){
-                printf("invalid packet\n");
+                printf("Client recv: invalid packet\n");
                 continue;
             }
 

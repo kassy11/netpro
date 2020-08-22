@@ -27,6 +27,7 @@
 #define MESSAGE 5
 #define QUIT    6
 
+// パケットのバリデーションのためのenum
 typedef enum {
     Client_send,
     Client_recv,
@@ -43,7 +44,6 @@ typedef enum {
 #define S_BUFSIZE 512   /* 送信用バッファサイズ */
 #define R_BUFSIZE 512   /* 受信用バッファサイズ */
 
-
 #define SERVER_LEN 256     /* サーバ名格納用バッファサイズ */
 #define DEFAULT_PORT 50001 /* ポート番号既定値 */
 #define DEFAULT_NCLIENT 3  /* 省略時のクライアント数 */
@@ -57,13 +57,21 @@ typedef struct _imember {
     struct _imember *next;        /* 次のユーザ */
 } *imember;
 
-// パケットの解析用の構造体
-struct idobata {
-    char header[4];   /* パケットのヘッダ部(4バイト) */
-    char sep;         /* セパレータ(空白、またはゼロ) */
-    char data[];      /* データ部分(メッセージ本体) */
+// クライアント管理のための構造体（連結リストの場合）
+struct _clientdb {
+    int  number;  /* クライアント総数 */
+    int  maxfds;   /* 最大のディスクリプタ値 */
+    imember  current;  /* 現在処理中のユーザ */
+    imember  head;  /* ユーザリストの先頭 */
 };
 
+//// パケットの解析用の構造体
+//struct idobata {
+//    char header[4];   /* パケットのヘッダ部(4バイト) */
+//    char sep;         /* セパレータ(空白、またはゼロ) */
+//    char data[];      /* データ部分(メッセージ本体) */
+//};
+//
 
 
 /* サーバメインルーチン */

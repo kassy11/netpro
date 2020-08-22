@@ -65,25 +65,26 @@ struct _clientdb {
     imember  head;  /* ユーザリストの先頭 */
 };
 
-//// パケットの解析用の構造体
-//struct idobata {
-//    char header[4];   /* パケットのヘッダ部(4バイト) */
-//    char sep;         /* セパレータ(空白、またはゼロ) */
-//    char data[];      /* データ部分(メッセージ本体) */
-//};
-//
+// パケットの解析用の構造体
+struct idobata {
+    char header[4];   /* パケットのヘッダ部(4バイト) */
+    char sep;         /* セパレータ(空白、またはゼロ) */
+    char data[];      /* データ部分(メッセージ本体) */
+};
+
 
 
 /* サーバメインルーチン */
 void idobata_server(int port_number, int n_client);
-
+void idobata_loop();
 /* クライアントメインルーチン */
 void idobata_client(char* servername, int port_number);
 
-u_int32_t analyze_header( char *header );
+int analyze_header( char *header );
 void show_adrsinfo(struct sockaddr_in *adrs_in);
 void set_here_packet(int port_number);
 void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_num);
+
 /* クライアントの初期化 */
 char* create_packet(u_int32_t type, char *message );
 void init_client(int sock_listen, int n_client);

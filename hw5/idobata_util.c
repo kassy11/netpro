@@ -6,14 +6,18 @@
 static int N_client;         /* クライアントの数 */
 static int Max_sd;               /* ディスクリプタ最大値 */
 static char Buffer[MSGBUF_SIZE];
+char *check;
+char buf[R_BUFSIZE];
 // imemberはユーザ構造体へのポインタ型
 // TODO:ここの定義合ってる？？
 static imember Member;
 // static client_info *Client;  /* クライアントの情報 */
 static int client_join(int sock_listen);
 static char *chop_nl(char *s);
+static char* receive_packet();
+static void send_packet( char *packet );
 
-u_int32_t analyze_header( char *header )
+int analyze_header( char *header )
 {
     if( strncmp( header, "HELO", 4 )==0 ) return(HELO);
     if( strncmp( header, "HERE", 4 )==0 ) return(HERE);
@@ -177,7 +181,9 @@ void init_client(int sock_listen, int n_client)
  // TODO: analyze_headerを使うように変更
 static int client_join(int sock_listen) {
     int client_id, sock_accepted;
-    char join_packet[R_BUFSIZE];
+    struct idobata *join_packet;
+    char r_buf[R_BUFSIZE];
+    static char prompt[]="Input your username: ";
     char loginname[NAMELENGTH];
     int strsize;
 
@@ -187,15 +193,20 @@ static int client_join(int sock_listen) {
         sock_accepted = Accept(sock_listen, NULL, NULL);
         printf("Client[%d] connected.\n", client_id);
 
+        Send(sock_accepted, prompt, strlen(prompt), 0);
+
         // JOINパケットを受信
-        strsize = Recv(sock_accepted, join_packet, R_BUFSIZE - 1, 0);
+        Recv(sock_accepted, r_buf, R_BUFSIZE - 1, 0);
 
+        join_packet = (struct idobata *)r_buf;
         // analyzeしてユーザ名を切り出す＆ヘッダーがJOINであることを確かめる
-
+        if(analyze_header(join_packet->header) != JOIN){
+            exit_errmesg("JOIN packet has not been reached\n");
+        }
 
         /* ユーザ情報を保存 */
         Member[client_id].sock = sock_accepted;
-        strncpy(Member[client_id].username, loginname, NAMELENGTH);
+        strncpy(Member[client_id].username, join_packet->data, NAMELENGTH);
         printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Member[client_id].sock, client_id, Member[client_id].username);
     }
 
@@ -203,40 +214,122 @@ static int client_join(int sock_listen) {
     return (sock_accepted);
 }
 
-int validate_packet(char *tcp_buf, buf_type type){
-    char *check;
-    char buf[R_BUFSIZE];
-    strcpy(buf, tcp_buf);
-    check = strtok(buf, " ");
+void idobata_loop()
+{
+    int msg_sender_client; // メッセージを送信したclient_idを保存する
+    int client_id;
+    static char msgprompt[]="Input your message ↓: \n";
 
-    switch (type) {
-        case Client_recv:
-            // クライアントが受け取るのはMESGパケットのみ
-            if(!strcmp(check, MESG_PACKET)){
-                return -1;
-            }
-            break;
-        case Client_send:
-            // ログイン済みクライアントが送れるはQUITとPOSTのみ
-            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
-                return -1;
-            }
-            break;
-        case Server_send:
-            // サーバが送信するのはMESGパケットのみ
-            if(!strcmp(check, MESG_PACKET)){
-                return -1;
-            }
-            break;
-        case Server_recv:
-            // サーバがログイン済みクライアントから受信するのはQUIT,POSTのみ
-            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
-                return -1;
-            }
-            break;
+    // TODO:ここはselectでなおす,analyze_packetで分岐する
+    for(;;){
+        for(client_id=0; client_id<N_client; client_id++){
+            Send(Member[client_id].sock, msgprompt, strlen(msgprompt), 0);
+        }
+        // receive_packetでPOSTメッセージを受信して送信用のMESGパケットを受け取る
+        // パケットを全ユーザーに向けて送信する
+        send_packet(receive_packet());
     }
-    return 0;
 }
+
+// クライアントからのメッセージを受信して、そのclient_idを返す
+// POSTとQUITを受信して、MESGパケットを作成する
+static char* receive_packet()
+{
+    fd_set mask, readfds;
+    int client_id;
+    int strsize;
+    struct idobata *packet;
+    char r_buf[R_BUFSIZE];
+    char *msg;
+
+    /* ビットマスクの準備 */
+    // クライアントのソケット番号 Client[client_id].sock を監視するように設定
+    FD_ZERO(&mask);
+    for(client_id=0; client_id<N_client; client_id++){
+        FD_SET(Member[client_id].sock, &mask);
+    }
+
+    /* 受信データの有無をチェック */
+    readfds = mask;
+
+    // データを送ってきたクライアントを知らべる
+    select( Max_sd+1, &readfds, NULL, NULL, NULL );
+
+    for( client_id=0; client_id<N_client; client_id++ ){
+        if( FD_ISSET(Member[client_id].sock, &readfds) ){
+            //ヘッダーがPOSTのときとQUITのときとで場合分け
+            // ユーザのメッセージをBufで受け取る
+            Recv(Member[client_id].sock ,r_buf , R_BUFSIZE-1,0);
+            packet = (struct idobata*)r_buf;
+
+            // ユーザ名を入れたMESGパケットを作成する
+            if(analyze_header(packet->header)==POST){
+                char name[R_BUFSIZE];
+                snprintf(name, NAMELENGTH," [%s]", Member[client_id].username);
+                strcpy(r_buf, create_packet(MESSAGE, strcat(r_buf,name)));
+            }else if(analyze_header(packet->header)==QUIT){
+                close(Member[client_id].sock);
+                continue;
+            }
+            strsize = strlen(r_buf);
+            strncpy(msg, r_buf, strsize);
+            break;
+        }
+    }
+    return msg;
+}
+
+// あるクライアントから送信されたメッセージをクライアント全員に送信する
+static void send_packet( char *packet )
+{
+    int strsize;
+    strsize = strlen(packet);
+    // メッセージを送信
+    for(int client_id=0; client_id<N_client; client_id++){
+        Send(Member[client_id].sock, packet, strsize,0);
+    }
+
+}
+
+//int validate_send_packet(char *header, buf_type type){
+//
+//}
+
+//int validate_packet(char *tcp_buf, buf_type type){
+//
+//    strcpy(buf, tcp_buf);
+//    check = strtok(buf, " ");
+//
+//    switch (type) {
+//        case Client_recv:
+//            // クライアントが受け取るのはMESGパケットのみ
+//            if(!strcmp(check, MESG_PACKET)){
+//                return -1;
+//            }
+//            break;
+//        case Client_send:
+//            // ログイン済みクライアントが送れるはQUITとPOSTのみ
+//            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
+//                return -1;
+//            }
+//            break;
+//        case Server_send:
+//            // サーバが送信するのはMESGパケットのみ
+//            if(!strcmp(check, MESG_PACKET)){
+//                return -1;
+//            }
+//            break;
+//        case Server_recv:
+//            // サーバがログイン済みクライアントから受信するのはQUIT,POSTのみ
+//            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
+//                return -1;
+//            }
+//            break;
+//    }
+//    return 0;
+//}
+
+
 
 void show_adrsinfo(struct sockaddr_in *adrs_in)
 {

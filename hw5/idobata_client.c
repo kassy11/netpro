@@ -1,8 +1,3 @@
-// idobata_client
-// - 起動時に「HELO」という内容のパケットをブロードキャストして送信する（一定時間返事がなければ再送する）
-// - サーバから「HERE」パケットを受信する（しなかったら再送する）
-// - ３回再送してもダメなら自信がサーバになる
-// -
 
 #include "mynet.h"
 #include "idobata.h"
@@ -23,18 +18,28 @@ void idobata_client(char* servername, int port_number){
         exit_errmesg("setsockopt()");
     }
 
+    // TODO:ここが完了するまでTCPクライアントを起動しないようにする、ここはほんとになおしたい
     set_helo_packet(udp_sock, &broadcast_adrs, port_number);
+    sleep(10);
     close(udp_sock);
-
 
     // ここからがTCPでのメッセージのやりとり
     char tcp_s_buf[S_BUFSIZE], tcp_r_buf[R_BUFSIZE];
     int tcp_sock;
+    int strsize;
     tcp_sock = init_tcpclient(servername, port_number);
     printf("TCPクライアントとして起動しました\n");
 
+    // JOINバケットを送信を作成して送信する
+    fgets(tcp_s_buf, S_BUFSIZE, stdin);
+    strcpy(tcp_s_buf, create_packet(JOIN, tcp_s_buf));
+    printf("%s", tcp_s_buf);
+    strsize = strlen(tcp_s_buf);
+    Send(tcp_sock, tcp_s_buf, strsize, 0);
+    // TODO: tcp_s_bufを初期化する？
+
     fd_set mask, readfds;
-    int strsize;
+    struct idobata *packet;
 
     for(;;){
 
@@ -46,27 +51,29 @@ void idobata_client(char* servername, int port_number){
         if( FD_ISSET(0, &readfds) ){
 
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
+            // TODO:QUITは入力してもらって、POSTはメッセージだけ入力してもらう
 
-            // TODO: validate_packetをanalayze形式になおす
-            if(validate_packet(tcp_s_buf, Client_send)==-1){
-                printf("Client send: invalid packet\n");
-                continue;
+            // QUITパケットでないとき
+            if(strncmp(tcp_s_buf, QUIT_PACKET, 4)!=0){
+                strcpy(tcp_s_buf,create_packet(POST,tcp_s_buf));
             }
 
             strsize = strlen(tcp_s_buf);
             Send(tcp_sock, tcp_s_buf, strsize, 0);
             // sendにエラー処理を加えた自作関数
+
+            // TODO: tcp_s_bufを初期化する？
         }
 
-        // 受信ソケットの監視
+        // 受信パケットの監視
         if( FD_ISSET(tcp_sock, &readfds) ){
+            // 受信するのはMESGのみなのでanalyze_headerでエラー処理
 
             /* サーバから文字列を受信する */
             strsize = Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
-
-            // TODO:analyzeでできるようにする
-            if(validate_packet(tcp_r_buf, Client_recv)==-1){
-                printf("Client recv: invalid packet\n");
+            packet = (struct idobata*)tcp_r_buf;
+            if(analyze_header(packet->header)!=MESSAGE){
+                printf("invalid packet\n");
                 continue;
             }
 
@@ -74,8 +81,7 @@ void idobata_client(char* servername, int port_number){
                 close(tcp_sock);
                 exit_errmesg("server is down");
             }
-            tcp_r_buf[strsize] = '\0';
-            printf("%s",tcp_r_buf);
+            printf("%s\n",packet->data);
             fflush(stdout); /* バッファの内容を強制的に出力 */
 
         }

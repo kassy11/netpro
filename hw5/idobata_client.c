@@ -18,7 +18,7 @@ void idobata_client(char* servername, int port_number){
         exit_errmesg("setsockopt()");
     }
 
-    // TODO:ここが完了するまでTCPクライアントを起動しないようにする、ここはほんとになおしたい
+    // TODO:HELO→HEREが完了するまでTCPクライアントを起動しないようにsleepする、ここはほんとになおしたい
     set_helo_packet(udp_sock, &broadcast_adrs, port_number);
     sleep(10);
     close(udp_sock);
@@ -70,6 +70,7 @@ void idobata_client(char* servername, int port_number){
             Send(tcp_sock, tcp_s_buf, strsize, 0);
 
             // TODO: tcp_s_bufを初期化する？
+            memset(tcp_s_buf, '\0', sizeof(tcp_s_buf));
         }
 
         // 受信パケットの監視
@@ -79,18 +80,20 @@ void idobata_client(char* servername, int port_number){
             /* サーバから文字列を受信する */
             Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
             packet = (struct idobata*)tcp_r_buf;
-//            if(analyze_header(packet->header)!=MESSAGE || analyze_header(packet->header)!=SERVER){
-//                printf("invalid packet\n");
-//                continue;
-//            }
-//
-//            if(strsize == 0){
-//                close(tcp_sock);
-//                exit_errmesg("server is down");
-//            }
-            printf("%s\n",packet->data);
-            fflush(stdout); /* バッファの内容を強制的に出力 */
+            if(analyze_header(packet->header)!=MESSAGE && analyze_header(packet->header)!=SERVER){
+                printf("invalid packet\n");
+                printf("please send MESG or SERV packet\n");
+                continue;
+            }
 
+            if(strsize == 0){
+                close(tcp_sock);
+                exit_errmesg("server is down");
+            }
+            printf("%s\n",packet->data);
+            fflush(stdout);
+            /* バッファの内容を強制的に出力 */
+            memset(tcp_r_buf, '\0', sizeof(tcp_r_buf));
         }
 
     }

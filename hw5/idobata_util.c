@@ -7,9 +7,7 @@ static int Max_sd;               /* ディスクリプタ最大値 */
 static char Buffer[MSGBUF_SIZE];
 
 // imemberはユーザ構造体へのポインタ型
-// TODO:ここの定義合ってる？？
 static imember Member;
-// static client_info *Client;  /* クライアントの情報 */
 static int client_join(int sock_listen);
 static char *chop_nl(char *s);
 static char* receive_packet();
@@ -192,7 +190,7 @@ static int client_join(int sock_listen) {
         /* クライアントの接続を受け付ける */
         sock_accepted = Accept(sock_listen, NULL, NULL);
         printf("Client[%d] connected.\n", client_id);
-        
+
         // JOINでないときはJOINパケットを送信するまでやり直させる
         do{
             Send(sock_accepted, prompt, strlen(prompt), 0);

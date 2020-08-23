@@ -36,7 +36,6 @@ void idobata_client(char* servername, int port_number){
     FD_SET(0, &mask);
     FD_SET(tcp_sock, &mask);
 
-    printf("forてまえ\n");
     for(;;){
         struct idobata *packet;
         readfds = mask;
@@ -47,25 +46,25 @@ void idobata_client(char* servername, int port_number){
         if( FD_ISSET(0, &readfds) ){
 
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
-            // TODO:QUITは入力してもらって、POSTはメッセージだけ入力してもらう
             // POST.JOIN.QUITともに入力してもらう
 
-            printf("%s", tcp_s_buf);
             packet = (struct idobata *)tcp_s_buf;
             switch(analyze_header(packet->header)){
                 case JOIN:
                     strcpy(tcp_s_buf, create_packet(JOIN, packet->data));
-                    printf("%s", tcp_s_buf);
                     break;
                 case POST:
                     strcpy(tcp_s_buf, create_packet(POST, packet->data));
+                    printf("%s\n", tcp_s_buf);
                     break;
                 case QUIT:
                     strcpy(tcp_s_buf, create_packet(QUIT, ""));
                     break;
+                default:
+                    break;
             }
 
-            printf("パケット %s を送信します", tcp_s_buf);
+            printf("パケット %s を送信します\n", tcp_s_buf);
             strsize = strlen(tcp_s_buf);
             tcp_s_buf[strsize] = '\0';
             Send(tcp_sock, tcp_s_buf, strsize, 0);
@@ -78,17 +77,17 @@ void idobata_client(char* servername, int port_number){
             // 受信するのはMESGのみなのでanalyze_headerでエラー処理
 
             /* サーバから文字列を受信する */
-            strsize = Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
+            Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
             packet = (struct idobata*)tcp_r_buf;
 //            if(analyze_header(packet->header)!=MESSAGE || analyze_header(packet->header)!=SERVER){
 //                printf("invalid packet\n");
 //                continue;
 //            }
 //
-            if(strsize == 0){
-                close(tcp_sock);
-                exit_errmesg("server is down");
-            }
+//            if(strsize == 0){
+//                close(tcp_sock);
+//                exit_errmesg("server is down");
+//            }
             printf("%s\n",packet->data);
             fflush(stdout); /* バッファの内容を強制的に出力 */
 

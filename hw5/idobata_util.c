@@ -3,7 +3,7 @@
 
 #define MSGBUF_SIZE 512
 static int N_client;         /* クライアントの数 */
-static int Max_sd;               /* ディスクリプタ最大値 */
+static int Max_sd = 0;               /* ディスクリプタ最大値 */
 static char Buffer[MSGBUF_SIZE];
 
 // imemberはユーザ構造体へのポインタ型
@@ -83,7 +83,7 @@ void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_
             break;
         }
         // HELOパケットを作成する
-        strcpy(udp_s_buf, create_packet(HELO, ""));
+        strcpy(udp_s_buf, create_packet(HELO, "\n"));
         printf("%s\n", udp_s_buf);
         strsize = strlen(udp_s_buf);
 
@@ -129,6 +129,7 @@ void set_here_packet(int port_number){
 
     int sock;
     socklen_t from_len;
+    struct idobata *packet;
 
     char r_buf[R_BUFSIZE], s_buf[S_BUFSIZE];
     int strsize;
@@ -146,8 +147,9 @@ void set_here_packet(int port_number){
         show_adrsinfo(&from_adrs);
         printf("%sパケットを受信しました\n", r_buf);
 
-        if(strncmp(r_buf, HELO_PACKET, 4) == 0){
-            strcpy(s_buf, create_packet(HERE, ""));
+        packet = (struct idobata *)r_buf;
+        if(analyze_header(packet->header)==HELO){
+            strcpy(s_buf, create_packet(HERE, "\n"));
             printf("%sパケットを送信しました\n", s_buf);
             strsize = strlen(s_buf);
             Sendto(sock, s_buf, strsize, 0,
@@ -164,6 +166,7 @@ void set_here_packet(int port_number){
 void init_client(int sock_listen, int n_client)
 {
     N_client = n_client;
+    int descriptor;
 
     /* クライアント情報の保存用構造体の初期化 */
     // Memberはユーザ構造体へのポインタ型
@@ -172,7 +175,10 @@ void init_client(int sock_listen, int n_client)
     }
 
     // selectで使うために、受け付けたソケット番号の最大値を受け取る
-    Max_sd = client_join(sock_listen);
+    descriptor = client_join(sock_listen);
+    if(descriptor >= Max_sd){
+        Max_sd = descriptor;
+    }
 }
 
 // JOINパケットをrecvしてユーザ構造体に情報を格納する
@@ -182,8 +188,9 @@ static int client_join(int sock_listen) {
     int strsize;
     struct idobata *packet;
     char r_buf[R_BUFSIZE];
-    static char prompt[R_BUFSIZE];
-    strcpy(prompt, create_packet(SERVER, "create JOIN packet: "));
+    char prompt[R_BUFSIZE];
+    strcpy(prompt, create_packet(SERVER, "create JOIN packet\n"));
+    printf("送信パケット %s", prompt);
 
     // 全クライアントのログイン処理
     for (client_id = 0; client_id < N_client; client_id++) {
@@ -217,26 +224,8 @@ static int client_join(int sock_listen) {
 
 void idobata_loop()
 {
-    int client_id;
-    static char msgprompt[S_BUFSIZE]="Input your POST packet ↓: \n";
-    char *usermsg;
-
-
-//    for(;;){
-//        for(client_id=0; client_id<N_client; client_id++){
-//            Send(Member[client_id].sock, msgprompt, strlen(msgprompt), 0);
-//        }
-//        // receive_packetでPOSTメッセージを受信して送信用のMESGパケットを受け取る
-//        // パケットを全ユーザーに向けて送信する
-//        usermsg = receive_packet();
-//        printf("%s\n", usermsg);
-//        send_packet(usermsg);
-//    }
 
     for(;;){
-        for(client_id=0; client_id<N_client; client_id++){
-            Send(Member[client_id].sock, msgprompt, strlen(msgprompt), 0);
-        }
         fd_set mask, readfds;
         int client_id;
         int strsize;
@@ -244,6 +233,13 @@ void idobata_loop()
         char r_buf[R_BUFSIZE];
         char msg[R_BUFSIZE];
 
+        char msgprompt[R_BUFSIZE];
+        strcpy(msgprompt, create_packet(SERVER, "Input your POST or QUIT packet:\n"));
+        printf("送信パケット %s", msgprompt);
+
+        for(int client_id=0; client_id<N_client; client_id++){
+            Send(Member[client_id].sock, msgprompt, strlen(msgprompt),0);
+        }
         /* ビットマスクの準備 */
         // クライアントのソケット番号 Client[client_id].sock を監視するように設定
         FD_ZERO(&mask);
@@ -253,7 +249,6 @@ void idobata_loop()
 
         /* 受信データの有無をチェック */
         readfds = mask;
-
         // データを送ってきたクライアントを知らべる
         select( Max_sd+1, &readfds, NULL, NULL, NULL );
 
@@ -262,20 +257,20 @@ void idobata_loop()
                 //ヘッダーがPOSTのときとQUITのときとで場合分け
                 // ユーザのメッセージをBufで受け取る
                 Recv(Member[client_id].sock ,r_buf , R_BUFSIZE-1,0);
-                printf("%s\n", r_buf);
+                printf("受信パケット %s\n", r_buf);
                 packet = (struct idobata*)r_buf;
 
                 // ユーザ名を入れたMESGパケットを作成する
+                // TODO:ここがうまくいってない
                 if(analyze_header(packet->header)==POST){
                     char name[R_BUFSIZE];
-                    snprintf(name, L_USERNAME," [%s]", Member[client_id].username);
+                    snprintf(name, L_USERNAME," [%s]\n", Member[client_id].username);
                     strcpy(r_buf, create_packet(MESSAGE, strcat(r_buf,name)));
                 }else if(analyze_header(packet->header)==QUIT){
                     close(Member[client_id].sock);
                     break;
                 }
-                strsize = strlen(r_buf);
-                strncpy(msg, r_buf, strsize);
+                strcpy(msg, r_buf);
                 break;
             }
         }

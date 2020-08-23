@@ -23,6 +23,7 @@ int analyze_header( char *header )
     if( strncmp( header, "POST", 4 )==0 ) return(POST);
     if( strncmp( header, "MESG", 4 )==0 ) return(MESSAGE);
     if( strncmp( header, "QUIT", 4 )==0 ) return(QUIT);
+    if ( strncmp(header, "SERV", 4)==0) return (SERVER);
     return 0;
 }
 
@@ -48,8 +49,10 @@ char* create_packet(u_int32_t type, char *message ){
         case QUIT:
             snprintf( Buffer, MSGBUF_SIZE, "QUIT" );
             break;
+        case SERVER:
+            snprintf( Buffer, MSGBUF_SIZE, "SERV %s", message);
+            break;
         default:
-            /* Undefined packet type */
             break;
     }
     return Buffer;
@@ -166,7 +169,7 @@ void init_client(int sock_listen, int n_client)
 
     /* クライアント情報の保存用構造体の初期化 */
     // Memberはユーザ構造体へのポインタ型
-    if((Member=(struct _imember *)malloc(N_client*sizeof(struct _imember)))==NULL ){
+    if((Member=(imember)malloc(N_client*sizeof(struct _imember)))==NULL ){
         exit_errmesg("malloc()");
     }
 
@@ -176,11 +179,13 @@ void init_client(int sock_listen, int n_client)
 
 // JOINパケットをrecvしてユーザ構造体に情報を格納する
 static int client_join(int sock_listen) {
+    printf("client_join()\n");
     int client_id, sock_accepted;
     int strsize;
     struct idobata *join_packet;
     char r_buf[R_BUFSIZE];
-    static char prompt[]="Create your JOIN packet with username: ";
+    static char prompt[R_BUFSIZE];
+    strcpy(prompt, create_packet(SERVER, "create JOIN packet: "));
 
     // 全クライアントのログイン処理
     for (client_id = 0; client_id < N_client; client_id++) {

@@ -21,12 +21,14 @@ typedef enum {
     QUIT
 }packet_type;;
 
+// サーバのちょっとしたメッセージのためにSERVERパケットを追加
 #define HELO   1
 #define HERE    2
 #define JOIN    3
 #define POST    4
 #define MESSAGE 5
 #define QUIT    6
+#define SERVER 7
 
 // パケットの定義
 #define HELO_PACKET "HELO"
@@ -35,6 +37,7 @@ typedef enum {
 #define POST_PACKET "POST"
 #define MESG_PACKET "MESG"
 #define QUIT_PACKET "QUIT"
+#define SERVER_PACKET "SERV"
 
 
 #define TIMEOUT_SEC 3

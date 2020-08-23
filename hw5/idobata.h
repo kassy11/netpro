@@ -11,6 +11,23 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 
+
+typedef enum {
+    HELO,
+    HERE,
+    JOIN,
+    POST,
+    MESG,
+    QUIT
+}packet_type;;
+
+#define HELO   1
+#define HERE    2
+#define JOIN    3
+#define POST    4
+#define MESSAGE 5
+#define QUIT    6
+
 // パケットの定義
 #define HELO_PACKET "HELO"
 #define HERE_PACKET "HERE"
@@ -19,26 +36,9 @@
 #define MESG_PACKET "MESG"
 #define QUIT_PACKET "QUIT"
 
-// TODO: enumになおす
-#define HELO   1
-#define HERE    2
-#define JOIN    3
-#define POST    4
-#define MESSAGE 5
-#define QUIT    6
-
-// パケットのバリデーションのためのenum
-typedef enum {
-    Client_send,
-    Client_recv,
-    Server_send,
-    Server_recv
-}buf_type;
-
 
 #define TIMEOUT_SEC 3
 #define TIMEOUT_NUM 3
-#define MSGBUF_SIZE 512
 #define L_USERNAME 20
 
 #define S_BUFSIZE 512   /* 送信用バッファサイズ */
@@ -88,6 +88,5 @@ void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adr, int port_n
 /* クライアントの初期化 */
 char* create_packet(u_int32_t type, char *message );
 void init_client(int sock_listen, int n_client);
-int validate_packet(char *buf, buf_type type);
 
 #endif //HW5_IDOBATA_H

@@ -2,12 +2,10 @@
 #include "idobata.h"
 
 #define MSGBUF_SIZE 512
-#define NAMELENGTH 20
 static int N_client;         /* クライアントの数 */
 static int Max_sd;               /* ディスクリプタ最大値 */
 static char Buffer[MSGBUF_SIZE];
-char *check;
-char buf[R_BUFSIZE];
+
 // imemberはユーザ構造体へのポインタ型
 // TODO:ここの定義合ってる？？
 static imember Member;
@@ -168,8 +166,7 @@ void init_client(int sock_listen, int n_client)
 
     /* クライアント情報の保存用構造体の初期化 */
     // Memberはユーザ構造体へのポインタ型
-    // TODO: ここの定義合ってる？？
-    if((Member=(imember)malloc(N_client*sizeof(struct _imember)))==NULL ){
+    if((Member=(struct _imember *)malloc(N_client*sizeof(struct _imember)))==NULL ){
         exit_errmesg("malloc()");
     }
 
@@ -177,15 +174,13 @@ void init_client(int sock_listen, int n_client)
     Max_sd = client_join(sock_listen);
 }
 
- // JOINパケットをrecvしてユーザ構造体に情報を格納する
- // TODO: analyze_headerを使うように変更
+// JOINパケットをrecvしてユーザ構造体に情報を格納する
 static int client_join(int sock_listen) {
     int client_id, sock_accepted;
+    int strsize;
     struct idobata *join_packet;
     char r_buf[R_BUFSIZE];
-    static char prompt[]="Input your username: ";
-    char loginname[NAMELENGTH];
-    int strsize;
+    static char prompt[]="Create your JOIN packet with username: ";
 
     // 全クライアントのログイン処理
     for (client_id = 0; client_id < N_client; client_id++) {
@@ -193,6 +188,7 @@ static int client_join(int sock_listen) {
         sock_accepted = Accept(sock_listen, NULL, NULL);
         printf("Client[%d] connected.\n", client_id);
 
+        // TODO:なぜかプロンプトがsendできていない
         Send(sock_accepted, prompt, strlen(prompt), 0);
 
         // JOINパケットを受信
@@ -204,9 +200,15 @@ static int client_join(int sock_listen) {
             exit_errmesg("JOIN packet has not been reached\n");
         }
 
+        strsize = strlen(join_packet->data);
+        join_packet->data[strsize] = '\0';
+        chop_nl(join_packet->data);
+
+        printf("%s", join_packet->data);
+
         /* ユーザ情報を保存 */
         Member[client_id].sock = sock_accepted;
-        strncpy(Member[client_id].username, join_packet->data, NAMELENGTH);
+        strcpy(Member[client_id].username, join_packet->data);
         printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Member[client_id].sock, client_id, Member[client_id].username);
     }
 
@@ -265,7 +267,7 @@ static char* receive_packet()
             // ユーザ名を入れたMESGパケットを作成する
             if(analyze_header(packet->header)==POST){
                 char name[R_BUFSIZE];
-                snprintf(name, NAMELENGTH," [%s]", Member[client_id].username);
+                snprintf(name, L_USERNAME," [%s]", Member[client_id].username);
                 strcpy(r_buf, create_packet(MESSAGE, strcat(r_buf,name)));
             }else if(analyze_header(packet->header)==QUIT){
                 close(Member[client_id].sock);
@@ -290,45 +292,6 @@ static void send_packet( char *packet )
     }
 
 }
-
-//int validate_send_packet(char *header, buf_type type){
-//
-//}
-
-//int validate_packet(char *tcp_buf, buf_type type){
-//
-//    strcpy(buf, tcp_buf);
-//    check = strtok(buf, " ");
-//
-//    switch (type) {
-//        case Client_recv:
-//            // クライアントが受け取るのはMESGパケットのみ
-//            if(!strcmp(check, MESG_PACKET)){
-//                return -1;
-//            }
-//            break;
-//        case Client_send:
-//            // ログイン済みクライアントが送れるはQUITとPOSTのみ
-//            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
-//                return -1;
-//            }
-//            break;
-//        case Server_send:
-//            // サーバが送信するのはMESGパケットのみ
-//            if(!strcmp(check, MESG_PACKET)){
-//                return -1;
-//            }
-//            break;
-//        case Server_recv:
-//            // サーバがログイン済みクライアントから受信するのはQUIT,POSTのみ
-//            if(!strcmp(check, QUIT_PACKET) || !strcmp(check, POST_PACKET)){
-//                return -1;
-//            }
-//            break;
-//    }
-//    return 0;
-//}
-
 
 
 void show_adrsinfo(struct sockaddr_in *adrs_in)

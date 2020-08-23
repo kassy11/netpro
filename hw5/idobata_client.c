@@ -30,19 +30,22 @@ void idobata_client(char* servername, int port_number){
     tcp_sock = init_tcpclient(servername, port_number);
     printf("TCPクライアントとして起動しました\n");
 
-    // JOINバケットを送信を作成して送信する
-    fgets(tcp_s_buf, S_BUFSIZE, stdin);
-    strcpy(tcp_s_buf, create_packet(JOIN, tcp_s_buf));
-    printf("%s", tcp_s_buf);
-    strsize = strlen(tcp_s_buf);
-    Send(tcp_sock, tcp_s_buf, strsize, 0);
-    // TODO: tcp_s_bufを初期化する？
+
+//    fgets(tcp_s_buf, S_BUFSIZE, stdin);
+//    strcpy(tcp_s_buf, create_packet(JOIN, tcp_s_buf));
+//    printf("%s", tcp_s_buf);
+//    strsize = strlen(tcp_s_buf);
+//    Send(tcp_sock, tcp_s_buf, strsize, 0);
 
     fd_set mask, readfds;
-    struct idobata *packet;
 
+    FD_ZERO(&mask);
+    FD_SET(0, &mask);
+    FD_SET(tcp_sock, &mask);
+
+    printf("forてまえ\n");
     for(;;){
-
+        struct idobata *packet;
         readfds = mask;
 
         select(tcp_sock+1, &readfds, NULL, NULL, NULL);
@@ -52,15 +55,28 @@ void idobata_client(char* servername, int port_number){
 
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
             // TODO:QUITは入力してもらって、POSTはメッセージだけ入力してもらう
+            // POST.JOIN.QUITともに入力してもらう
 
-            // QUITパケットでないとき
-            if(strncmp(tcp_s_buf, QUIT_PACKET, 4)!=0){
-                strcpy(tcp_s_buf,create_packet(POST,tcp_s_buf));
+            printf("%s", tcp_s_buf);
+            packet = (struct idobata *)tcp_s_buf;
+            switch(analyze_header(packet->header)){
+                case JOIN:
+                    strcpy(tcp_s_buf, create_packet(JOIN, packet->data));
+                    printf("%s", tcp_s_buf);
+                    break;
+                case POST:
+                    strcpy(tcp_s_buf, create_packet(POST, packet->data));
+                    break;
+                case QUIT:
+                    strcpy(tcp_s_buf, create_packet(QUIT, ""));
+                    break;
             }
 
+
+            printf("パケット %s を送信します", tcp_s_buf);
             strsize = strlen(tcp_s_buf);
+            tcp_s_buf[strsize] = '\0';
             Send(tcp_sock, tcp_s_buf, strsize, 0);
-            // sendにエラー処理を加えた自作関数
 
             // TODO: tcp_s_bufを初期化する？
         }
@@ -68,14 +84,15 @@ void idobata_client(char* servername, int port_number){
         // 受信パケットの監視
         if( FD_ISSET(tcp_sock, &readfds) ){
             // 受信するのはMESGのみなのでanalyze_headerでエラー処理
+            // TODO: プロスペロを表示できるようにする
 
             /* サーバから文字列を受信する */
             strsize = Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
             packet = (struct idobata*)tcp_r_buf;
-            if(analyze_header(packet->header)!=MESSAGE){
-                printf("invalid packet\n");
-                continue;
-            }
+//            if(analyze_header(packet->header)==MESSAGE){
+//                printf("invalid packet\n");
+//                continue;
+//            }
 
             if(strsize == 0){
                 close(tcp_sock);

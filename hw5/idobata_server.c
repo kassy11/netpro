@@ -16,7 +16,6 @@ void idobata_server(int port_number, int n_client){
     sock_listen = init_tcpserver(port_number, 5);
     printf("TCPサーバの初期化\n");
 
-    // TODO:acceptの処理はinit_clientでまとめる？
     init_client(sock_listen, n_client);
 
     close(sock_listen);

@@ -1,5 +1,3 @@
-// 起動時プログラム
-// サーバかクライアントかを選択する
 
 #include "mynet.h"
 #include "idobata.h"

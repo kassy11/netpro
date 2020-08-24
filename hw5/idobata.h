@@ -42,7 +42,7 @@ typedef enum {
 
 #define TIMEOUT_SEC 3
 #define TIMEOUT_NUM 3
-#define L_USERNAME 20
+#define L_USERNAME 100
 
 #define S_BUFSIZE 512   /* 送信用バッファサイズ */
 #define R_BUFSIZE 512   /* 受信用バッファサイズ */

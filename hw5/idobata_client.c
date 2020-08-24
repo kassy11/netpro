@@ -64,7 +64,8 @@ void idobata_client(char* servername, int port_number){
                     break;
             }
 
-            printf("パケット %s を送信します\n", tcp_s_buf);
+            // 改行入れないと文字化けする
+            printf("送信パケット %s\n", tcp_s_buf);
             strsize = strlen(tcp_s_buf);
             tcp_s_buf[strsize] = '\0';
             Send(tcp_sock, tcp_s_buf, strsize, 0);
@@ -80,8 +81,11 @@ void idobata_client(char* servername, int port_number){
             /* サーバから文字列を受信する */
             Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
             strsize = strlen(tcp_r_buf);
-            printf("受信したパケット %s\n", tcp_r_buf);
+            printf("受信パケット %s", tcp_r_buf);
+
+            // TODO: ３回目くらいで受信できているのにここに入ってしまうのはなぜ
             if(strsize == 0){
+                printf("エラー時 ヘッダ %s データ %s\n", packet->header, packet->data);
                 close(tcp_sock);
                 exit_errmesg("server is down\n");
             }
@@ -94,7 +98,8 @@ void idobata_client(char* servername, int port_number){
 
             strsize = strlen(packet->data);
             packet->data[strsize] = '\0';
-            printf("%s",packet->data);
+            // 改行入れないと文字化けする
+            printf("\x1b[36m %s \033[m\x1b[0m\n", packet->data);
             /* バッファの内容を強制的に出力 */
             memset(tcp_r_buf, '\0', sizeof(tcp_r_buf));
         }

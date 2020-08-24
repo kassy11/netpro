@@ -72,7 +72,7 @@ struct _clientdb {
 struct idobata {
     char header[4];   /* パケットのヘッダ部(4バイト) */
     char sep;         /* セパレータ(空白、またはゼロ) */
-    char data[];      /* データ部分(メッセージ本体) */
+    char data[R_BUFSIZE];      /* データ部分(メッセージ本体) */
 };
 
 

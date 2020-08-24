@@ -210,12 +210,15 @@ static int client_join(int sock_listen) {
         packet->data[strsize] = '\0';
         chop_nl(packet->data);
 
-        printf("%s", packet->data);
+        printf("パケットデータ %s\n", packet->data);
 
         /* ユーザ情報を保存 */
         Member[client_id].sock = sock_accepted;
         strcpy(Member[client_id].username, packet->data);
         printf("ソケット番号[%d] ユーザ番号[%d]：%sさんが参加しました！\n", Member[client_id].sock, client_id, Member[client_id].username);
+
+        // パケットデータの初期化
+        memset(packet->data, '\0', sizeof(packet->data));
     }
 
     // selectで使用するために最大（最後のユーザの）のソケット番号を返す

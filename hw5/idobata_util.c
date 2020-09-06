@@ -25,7 +25,7 @@ int analyze_header( char *header )
     return 0;
 }
 
-// TODO: ヒントだとvoidで返してるけど、char*で返すようにする
+// ヒントだとvoidで返してるけど、char*で返すようにする
 char* create_packet(u_int32_t type, char *message ){
 
     switch( type ){
@@ -239,11 +239,14 @@ void idobata_loop()
         for(client_id=0; client_id<N_client; client_id++){
             FD_SET(Member[client_id].sock, &mask);
         }
+        FD_SET(0, &mask);
+
 
         /* 受信データの有無をチェック */
         readfds = mask;
         // データを送ってきたクライアントを知らべる
         select( Max_sd+1, &readfds, NULL, NULL, NULL );
+
 
         for( client_id=0; client_id<N_client; client_id++ ){
             if( FD_ISSET(Member[client_id].sock, &readfds) ){
@@ -267,7 +270,16 @@ void idobata_loop()
                 memset(r_buf, '\0', sizeof(r_buf));
                 break;
             }
+            if( FD_ISSET(0, &readfds) ){
+              char tcp_s_buf[S_BUFSIZE];
+              fgets(tcp_s_buf, S_BUFSIZE, stdin);
+              strcpy(msg, create_packet(SERVER, tcp_s_buf));
+              break;
+            }
         }
+
+        
+
         strsize = strlen(msg);
         printf("送信パケット %s", msg);
         // メッセージを送信
@@ -275,8 +287,6 @@ void idobata_loop()
             Send(Member[client_id].sock, msg, strsize,0);
         }
     }
-
-
 }
 
 

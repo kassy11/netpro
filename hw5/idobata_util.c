@@ -64,14 +64,12 @@ void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_
 
     int timeout_count = 0;
 
-    // setsockoptに設定するブロードキャストのための変数
     fd_set mask, readfds;
     struct timeval timeout;
 
     char udp_s_buf[S_BUFSIZE], udp_r_buf[R_BUFSIZE];
     int strsize;
 
-    /* ビットマスクの準備 */
     FD_ZERO(&mask);
     FD_SET(udp_sock, &mask);
 
@@ -110,9 +108,6 @@ void set_helo_packet(int udp_sock, struct sockaddr_in *broadcast_adrs, int port_
 
         // サーバからHEREパケットが返ってきたとき
         if(strncmp(udp_r_buf, HERE_PACKET, 4)==0){
-            // 受信した「HERE」パケットからサーバのIPアドレスを得る→どこかに保存する？？
-            // from_adrsをリターンする必要がある
-            printf("%sパケットを受信しました\n", udp_r_buf);
             printf("サーバ情報:\n");
             show_adrsinfo(&from_adrs);
             break;
@@ -145,12 +140,10 @@ void set_here_packet(int port_number){
 
         printf("クライアント情報↓ \n");
         show_adrsinfo(&from_adrs);
-        printf("受信パケット %s\n", r_buf);
 
         packet = (struct idobata *)r_buf;
         if(analyze_header(packet->header)==HELO){
             strcpy(s_buf, create_packet(HERE, "\n"));
-            printf("送信パケット %s\n", s_buf);
             strsize = strlen(s_buf);
             Sendto(sock, s_buf, strsize, 0,
                    (struct sockaddr *)&from_adrs, sizeof(from_adrs));
@@ -189,7 +182,6 @@ static int client_join(int sock_listen) {
     char r_buf[R_BUFSIZE];
     char prompt[R_BUFSIZE];
     strcpy(prompt, create_packet(SERVER, "create JOIN packet\n"));
-    printf("送信パケット %s", prompt);
 
     // 全クライアントのログイン処理
     for (client_id = 0; client_id < N_client; client_id++) {
@@ -218,7 +210,6 @@ static int client_join(int sock_listen) {
         memset(packet->data, '\0', sizeof(packet->data));
     }
 
-    // selectで使用するために最大（最後のユーザの）のソケット番号を返す
     return (sock_accepted);
 }
 
@@ -247,17 +238,14 @@ void idobata_loop()
         // データを送ってきたクライアントを知らべる
         select( Max_sd+1, &readfds, NULL, NULL, NULL );
 
-
         for( client_id=0; client_id<N_client; client_id++ ){
             if( FD_ISSET(Member[client_id].sock, &readfds) ){
                 //ヘッダーがPOSTのときとQUITのときとで場合分け
                 // ユーザのメッセージをBufで受け取る
                 Recv(Member[client_id].sock ,r_buf , R_BUFSIZE-1,0);
-                printf("受信パケット %s\n", r_buf);
                 packet = (struct idobata*)r_buf;
 
                 // ユーザ名を入れたMESGパケットを作成する
-                // TODO:ここがうまくいってない
                 if(analyze_header(packet->header)==POST){
                     char name[L_USERNAME];
                     snprintf(name, L_USERNAME,"[%s] ", Member[client_id].username);
@@ -278,10 +266,7 @@ void idobata_loop()
             }
         }
 
-        
-
         strsize = strlen(msg);
-        printf("送信パケット %s", msg);
         // メッセージを送信
         for(client_id=0; client_id<N_client; client_id++){
             Send(Member[client_id].sock, msg, strsize,0);

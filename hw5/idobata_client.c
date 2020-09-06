@@ -46,10 +46,7 @@ void idobata_client(char* servername, int port_number){
 
         // キーボート入力の監視
         if( FD_ISSET(0, &readfds) ){
-
             fgets(tcp_s_buf, S_BUFSIZE, stdin);
-            // POST.JOIN.QUITともに入力してもらう
-
             int send_join = 1;
             packet = (struct idobata *)tcp_s_buf;
             switch(analyze_header(packet->header)){
@@ -75,7 +72,6 @@ void idobata_client(char* servername, int port_number){
             }
 
             // 改行入れないと文字化けする
-            printf("送信パケット %s\n", tcp_s_buf);
             strsize = strlen(tcp_s_buf);
             tcp_s_buf[strsize] = '\0';
             Send(tcp_sock, tcp_s_buf, strsize, 0);
@@ -88,17 +84,13 @@ void idobata_client(char* servername, int port_number){
         if( FD_ISSET(tcp_sock, &readfds) ){
             // 受信するのはMESGのみなのでanalyze_headerでエラー処理
             int show_msg = 1;
-
             /* サーバから文字列を受信する */
             Recv(tcp_sock, tcp_r_buf, R_BUFSIZE-1, 0);
             strsize = strlen(tcp_r_buf);
-            printf("受信パケット %s", tcp_r_buf);
 
-            // TODO: ３回目くらいで受信できているのにここに入ってしまうのはなぜ
+            // TODO: QUITのとき
             if(strsize == 0){
-                printf("エラー時 ヘッダ %s データ %s\n", packet->header, packet->data);
-                close(tcp_sock);
-                exit_errmesg("server is down\n");
+                continue;
             }
             packet = (struct idobata*)tcp_r_buf;
 

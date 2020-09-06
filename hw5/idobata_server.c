@@ -10,7 +10,6 @@ void idobata_server(int port_number, int n_client){
 
     // TCPポート(デフォルト50001番)を監視し、クライアントからの接続を待ち受ける
     int sock_listen;
-    /* サーバの初期化 */
     sock_listen = init_tcpserver(port_number, 5);
     printf("TCPサーバの初期化\n");
 
@@ -19,6 +18,5 @@ void idobata_server(int port_number, int n_client){
     close(sock_listen);
 
     // 井戸端会議のメイン処理
-    // idobata_loop→receve_packet/send_packet
     idobata_loop();
 }

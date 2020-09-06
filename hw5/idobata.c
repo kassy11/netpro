@@ -1,4 +1,3 @@
-
 #include "mynet.h"
 #include "idobata.h"
 #include <stdlib.h>

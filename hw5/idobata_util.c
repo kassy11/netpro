@@ -25,7 +25,7 @@ int analyze_header( char *header )
     return 0;
 }
 
-// TODO: ヒントだとvoidで返してるけど、char*で返す？？
+// TODO: ヒントだとvoidで返してるけど、char*で返すようにする
 char* create_packet(u_int32_t type, char *message ){
 
     switch( type ){
@@ -233,13 +233,6 @@ void idobata_loop()
         char r_buf[R_BUFSIZE];
         char msg[R_BUFSIZE];
 
-//        char msgprompt[R_BUFSIZE];
-//        strcpy(msgprompt, create_packet(SERVER, "Input your POST or QUIT packet:\n"));
-//        printf("送信パケット %s", msgprompt);
-//
-//        for(int client_id=0; client_id<N_client; client_id++){
-//            Send(Member[client_id].sock, msgprompt, strlen(msgprompt),0);
-//        }
         /* ビットマスクの準備 */
         // クライアントのソケット番号 Client[client_id].sock を監視するように設定
         FD_ZERO(&mask);
